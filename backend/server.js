@@ -15,6 +15,28 @@ const { search } = require("./search");
 // Set by main() once the signal handlers are wired; used by POST /api/stop.
 let shutdownApp = null;
 
+// llama-server runs with --ctx-size 4096; a long chat + injected web results
+// can exceed that and the request gets cancelled with an error. Keep the
+// prompt + answer under ctx by trimming oldest history. Reserved answer budget
+// 1024 tokens (--ctx 4096) so prompt budget is ~3072. Never drop system/grounding
+// messages or the newest user message. chars/4 is a rough token estimate.
+const CTX_BUDGET = 3072;
+const estTokens = (s) => Math.ceil((s || "").length / 4) + 8;
+function fitMessages(msgs) {
+  const keep = (m, i) => m.role === "system" || i === msgs.length - 1;
+  let total = msgs.reduce((n, m) => n + estTokens(m.content), 0);
+  let i = 0;
+  while (total > CTX_BUDGET && i < msgs.length - 1) {
+    if (!keep(msgs[i], i)) {
+      total -= estTokens(msgs[i].content);
+      msgs.splice(i, 1);
+    } else {
+      i++;
+    }
+  }
+  return msgs;
+}
+
 const llama = new LlamaServer();
 const whisper = new WhisperServer();
 const MIME = {
@@ -275,12 +297,15 @@ function handleChat(req, res) {
       if (!last) return null;
       const r = await search(last.content, 5).catch(() => ({ provider: "none", results: [] }));
       if (!r.results.length) return null;
-      const lines = r.results.map((x, i) => `${i + 1}. ${x.title} — ${x.snippet}\n   ${x.url}`).join("\n");
+      const lines = r.results.map((x, i) => {
+        const sn = (x.snippet || "").replace(/\s+/g, " ").trim().slice(0, 300);
+        return `${i + 1}. ${x.title} — ${sn}\n   ${x.url}`;
+      }).join("\n");
       return { role: "system", content: `Web search results (${r.provider}):\n${lines}\n\nGround your answer in these. If they don't answer the question, say so.` };
     };
 
     const run = async (sysMsg) => {
-      const effective = sysMsg ? [sysMsg, ...messages] : messages;
+      const effective = fitMessages(sysMsg ? [sysMsg, ...messages] : messages);
       const upstreamBody = JSON.stringify({
         messages: effective,
         temperature: body.temperature ?? 0.7,
