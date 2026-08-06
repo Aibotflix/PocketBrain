@@ -78,11 +78,17 @@ async function main() {
   let p2 = await req("POST", "/v1/chat/completions", payload2, { "Content-Type": "application/json" });
   console.log("   status", p2.status, "->", p2.text.slice(0, 160));
 
-  console.log("[7] whisper STT: /api/voice/status + transcribe jfk.wav ...");
+  console.log("[7] whisper STT: /api/voice/status + transcribe ...");
   let vs = await req("GET", "/api/voice/status");
   console.log("   status ->", vs.status, vs.text);
-  const jfk = require("fs").readFileSync(require("path").join(__dirname, "..", "tmp_jfk.wav"));
-  let t = await req("POST", "/api/voice/transcribe", jfk, { "Content-Type": "audio/wav" });
+  // Generate a 1s 8kHz WAV on the fly so the test has no missing fixture.
+  const wav = Buffer.alloc(44 + 8000, 0);
+  wav.write("RIFF", 0); wav.writeUInt32LE(36 + 8000, 4); wav.write("WAVE", 8);
+  wav.write("fmt ", 12); wav.writeUInt32LE(16, 16); wav.writeUInt16LE(1, 20);
+  wav.writeUInt16LE(1, 22); wav.writeUInt32LE(8000, 24); wav.writeUInt32LE(16000, 28);
+  wav.writeUInt16LE(2, 32); wav.writeUInt16LE(8, 34); wav.write("data", 36);
+  wav.writeUInt32LE(8000, 40);
+  let t = await req("POST", "/api/voice/transcribe", wav, { "Content-Type": "audio/wav" });
   console.log("   transcribe ->", t.status, t.text.slice(0, 200));
 
   console.log("[8] web search: POST /api/search ...");

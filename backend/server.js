@@ -307,10 +307,16 @@ function handleChat(req, res) {
     // Terse output directive: on slow local hardware (CPU ~5 t/s) every
     // output token is wall-clock time, and shorter answers free context
     // for web results. This is the "caveman" style trick for chat.
-    const DIRECTIVE = { role: "system", content: "Answer in the fewest words that are still correct. No greeting, no repeating the question, no summary of what you said. 1-3 sentences unless the user asks for detail. Quote the source briefly when using web results." };
+    const DIRECTIVE = "Answer in the fewest words that are still correct. No greeting, no repeating the question, no summary of what you said. 1-3 sentences unless the user asks for detail. Quote the source briefly when using web results.";
 
+    // llama.cpp's template allows only ONE leading system message — merge the
+    // directive, any incoming leading system message, and the web-results
+    // grounding into a single system message instead of stacking them.
     const run = async (sysMsg) => {
-      const effective = fitMessages([DIRECTIVE, ...(sysMsg ? [sysMsg] : []), ...messages]);
+      const base = messages[0] && messages[0].role === "system" ? messages[0] : null;
+      const rest = base ? messages.slice(1) : messages;
+      const parts = [DIRECTIVE, base && base.content, sysMsg && sysMsg.content].filter(Boolean);
+      const effective = fitMessages([{ role: "system", content: parts.join("\n\n") }, ...rest]);
       const upstreamBody = JSON.stringify({
         messages: effective,
         temperature: body.temperature ?? 0.7,
