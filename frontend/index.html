@@ -177,7 +177,6 @@
       startBtn.disabled = engineUp;
       startBtn.textContent = engineUp ? "Running" : "Start engine";
       sendBtn.disabled = !engineUp || busy;
-      stopBtn.disabled = !engineUp;
       webBtn.disabled = !engineUp;
       system(engineUp ? "Engine ready. Ask away." : "Backend up, engine not started. Click “Start engine”.");
       try {
@@ -227,17 +226,10 @@
 
   stopBtn.addEventListener("click", async () => {
     stopBtn.disabled = true;
-    system("Stopping engine…");
-    try {
-      const r = await fetch("/api/stop", { method: "POST" });
-      const j = await r.json().catch(() => ({}));
-      if (!r.ok || !j.ok) throw new Error(j.error?.message || "stop failed");
-      engineUp = false;
-      system("Engine stopped. Click “Start engine” to run again.");
-    } catch (e) {
-      system("Stop failed: " + e.message);
-      stopBtn.disabled = false;
-    }
+    system("Stopping…");
+    try { await fetch("/api/stop", { method: "POST" }); } catch (_) {}
+    system("Stopped. Closing this tab…");
+    setTimeout(() => { try { window.close(); } catch (_) {} }, 400);
   });
 
   // Auto-grow the textarea.
