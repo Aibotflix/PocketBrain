@@ -304,8 +304,13 @@ function handleChat(req, res) {
       return { role: "system", content: `Web search results (${r.provider}):\n${lines}\n\nGround your answer in these. If they don't answer the question, say so.` };
     };
 
+    // Terse output directive: on slow local hardware (CPU ~5 t/s) every
+    // output token is wall-clock time, and shorter answers free context
+    // for web results. This is the "caveman" style trick for chat.
+    const DIRECTIVE = { role: "system", content: "Answer in the fewest words that are still correct. No greeting, no repeating the question, no summary of what you said. 1-3 sentences unless the user asks for detail. Quote the source briefly when using web results." };
+
     const run = async (sysMsg) => {
-      const effective = fitMessages(sysMsg ? [sysMsg, ...messages] : messages);
+      const effective = fitMessages([DIRECTIVE, ...(sysMsg ? [sysMsg] : []), ...messages]);
       const upstreamBody = JSON.stringify({
         messages: effective,
         temperature: body.temperature ?? 0.7,
