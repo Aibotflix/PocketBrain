@@ -150,8 +150,9 @@ the new one. Tips:
   frontend and proxies chat (`/api/chat` → SSE tokens).
 - Everything is relative to the app folder; nothing is written outside it.
   That's the whole USB-portability contract.
-- Windows runs llama-server with `--load-mode mlock` because memory-mapped
-  GGUFs on FAT/exFAT page-fault to death on a USB stick.
+- Windows loads the model with `--load-mode none` (no mmap, model fully in
+  RAM) because memory-mapped GGUFs on FAT/exFAT page-fault to death on a USB
+  stick.
 - If `models/Qwen3.5-0.8B-Q4_K_M.gguf` is present, llama-server also gets
   `--model-draft` — speculative decoding. The small model guesses tokens, the
   main model validates them in batches: same output quality, ~1.3–1.5x speed.
@@ -237,8 +238,9 @@ a failure there just re-runs after deleting `bin/<variant>/`.
   and the final answer in `delta.content`.
 - **Download failed**: launcher uses `curl` (bundled on Windows 10+, present
   on macOS/Linux). Just re-run — downloads resume from the `.part` file.
-- **Slower than expected on Windows**: that's the `--no-mmap` trade-off;
-  dramatically faster on a USB stick, more RAM used.
+- **Slower than expected on Windows**: that's the no-mmap trade-off; loading
+  the model fully into RAM instead of memory-mapping the file means no USB
+  page-fault stalls, at the cost of more RAM used.
 - **Windows AMD Radeon**: the HIP build usually works driver-free; if the log
   shows a HIP/ROCm load error, delete `bin/win-hip-radeon-x64/` and re-run to
   fall back to CPU.
