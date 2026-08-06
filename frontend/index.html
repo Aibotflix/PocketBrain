@@ -1,0 +1,402 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Stick AI · local LLM</title>
+<style>
+  :root {
+    --bg: #0e0f13;
+    --panel: #16181f;
+    --panel-2: #1c1f28;
+    --line: #2a2e3a;
+    --text: #e7e9ee;
+    --muted: #9aa0ad;
+    --you: #4c8dff;
+    --ai: #9b8cff;
+    --ok: #5fd18a;
+    --err: #ff6b6b;
+    --mono: ui-monospace, "SFMono-Regular", "Menlo", "Consolas", monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg:#f7f8fa; --panel:#ffffff; --panel-2:#f0f2f6; --line:#e4e7ee;
+      --text:#1a1d24; --muted:#5b6270; --you:#2563eb; --ai:#7c3aed;
+      --ok:#16a34a; --err:#dc2626;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: var(--bg); color: var(--text); font-family: var(--sans);
+    display: flex; flex-direction: column; height: 100dvh;
+  }
+  header {
+    display: flex; align-items: center; gap: .75rem;
+    padding: .6rem 1rem; border-bottom: 1px solid var(--line);
+    background: var(--panel);
+  }
+  header .logo { font-weight: 700; letter-spacing: .02em; }
+  header .dot { width:8px; height:8px; border-radius:50%;
+    background: var(--muted); box-shadow: 0 0 0 0 transparent; transition: background .3s; }
+  header .dot.ok { background: var(--ok); }
+  header .dot.err { background: var(--err); }
+  header .status { color: var(--muted); font-size: .82rem; }
+  header .spacer { flex: 1; }
+  header button {
+    background: var(--panel-2); color: var(--text); border: 1px solid var(--line);
+    border-radius: 8px; padding: .42rem .7rem; font-size: .82rem; cursor: pointer;
+  }
+  header button:hover { border-color: var(--you); }
+  header select { background: var(--panel-2); color: var(--text); border:1px solid var(--line);
+    border-radius:8px; padding:.42rem .5rem; font-size:.82rem; max-width: 220px; }
+
+  main { flex: 1; overflow-y: auto; padding: 1rem; scroll-behavior: smooth; }
+  .msg { max-width: 820px; margin: 0 auto .9rem; display: flex; gap: .7rem; }
+  .msg .avatar { width: 28px; height: 28px; border-radius: 7px; flex: 0 0 auto;
+    display: grid; place-items: center; font-size: .78rem; font-weight: 700; color: #fff; }
+  .msg.you .avatar { background: var(--you); }
+  .msg.ai  .avatar { background: var(--ai); }
+  .msg .body { flex: 1; min-width: 0; }
+  .msg .role { font-size: .72rem; color: var(--muted); margin-bottom: .15rem; text-transform: uppercase; letter-spacing: .04em; }
+  .bubble { background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: .6rem .8rem; line-height: 1.5; white-space: pre-wrap; word-wrap: break-word; }
+  .thinking { color: var(--muted); font-style: italic; font-size: .85rem; line-height: 1.45;
+    white-space: pre-wrap; word-wrap: break-word; margin-bottom: .35rem; display: none; }
+  .thinking.show { display: block; }
+  .msg.you .bubble { border-color: color-mix(in srgb, var(--you) 35%, var(--line)); }
+  .msg.ai .bubble  { border-color: color-mix(in srgb, var(--ai) 30%, var(--line)); }
+  .bubble code, .bubble pre { font-family: var(--mono); font-size: .86em; }
+  .bubble pre { background: var(--panel-2); padding: .55rem .7rem; border-radius: 8px; overflow:auto; margin: .35rem 0; }
+  .err .bubble { border-color: var(--err); color: var(--err); }
+  .system { color: var(--muted); font-style: italic; max-width: 820px; margin: 0 auto 1rem; text-align: center; font-size: .85rem; }
+
+  footer { border-top: 1px solid var(--line); background: var(--panel); padding: .7rem 1rem; }
+  .composer { max-width: 820px; margin: 0 auto; display: flex; gap: .6rem; align-items: flex-end; }
+  textarea {
+    flex: 1; resize: none; background: var(--panel-2); color: var(--text);
+    border: 1px solid var(--line); border-radius: 12px; padding: .7rem .85rem;
+    font: inherit; line-height: 1.4; max-height: 220px; overflow-y: auto;
+  }
+  textarea:focus { outline: none; border-color: var(--you); }
+  .send {
+    background: var(--you); color: #fff; border: 0; border-radius: 12px;
+    padding: .7rem 1.1rem; font-weight: 600; cursor: pointer; white-space: nowrap;
+  }
+  .send:disabled { opacity: .5; cursor: not-allowed; }
+  .mic {
+    background: var(--panel-2); color: var(--text); border: 1px solid var(--line);
+    border-radius: 12px; padding: .7rem; font-size: 1rem; line-height: 1; cursor: pointer;
+  }
+  .mic.rec { border-color: var(--err); color: var(--err); animation: pulse 1.2s infinite; }
+  .mic:disabled { opacity: .4; cursor: not-allowed; }
+  .web { background: var(--panel-2); color: var(--text); border: 1px solid var(--line);
+    border-radius: 12px; padding: .7rem; font-size: 1rem; line-height: 1; cursor: pointer; }
+  .web.on { border-color: var(--you); color: var(--you); }
+  .web:disabled { opacity: .4; cursor: not-allowed; }
+  @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--err) 40%, transparent); } 50% { box-shadow: 0 0 0 6px color-mix(in srgb, var(--err) 0%, transparent); } }
+  .hint { max-width: 820px; margin: .4rem auto 0; color: var(--muted); font-size: .74rem; }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="dot" id="statusDot" title="backend status"></span>
+  <span class="logo">Stick AI</span>
+  <span class="status" id="statusText">connecting…</span>
+  <span class="spacer"></span>
+  <select id="modelSel" title="GGUF model"></select>
+  <button id="startBtn" title="Load model into llama-server">Start engine</button>
+  <button id="clearBtn">Clear</button>
+  <button id="stopBtn" title="Stop the engine and quit">Stop</button>
+</header>
+
+<main id="log">
+  <div class="system" id="sysMsg">Checking backend…</div>
+</main>
+
+<footer>
+  <div class="composer">
+    <button class="mic" id="micBtn" title="Speak instead of typing (voice-to-text)" hidden>🎤</button>
+    <button class="web" id="webBtn" title="Search the web and ground the answer" disabled>🌐</button>
+    <textarea id="prompt" rows="1" placeholder="Send a message… (Enter to send, Shift+Enter for newline)" autofocus></textarea>
+    <button class="send" id="sendBtn" disabled>Send</button>
+  </div>
+  <div class="hint">Runs fully offline on your machine. Conversations never leave this device. 🌐 answers check the web when online.</div>
+</footer>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const log = $("log"), promptEl = $("prompt"), sendBtn = $("sendBtn");
+  const startBtn = $("startBtn"), clearBtn = $("clearBtn"), stopBtn = $("stopBtn");
+  const dot = $("statusDot"), statusText = $("statusText"), sysMsg = $("sysMsg");
+  const modelSel = $("modelSel");
+  const micBtn = $("micBtn");
+  const webBtn = $("webBtn");
+
+  let engineUp = false;
+  let busy = false;
+  let webOn = false;
+
+  function setStatus(s, text) {
+    dot.className = "dot" + (s === "ok" ? " ok" : s === "err" ? " err" : "");
+    statusText.textContent = text;
+  }
+
+  function addMsg(role, text, opts = {}) {
+    const el = document.createElement("div");
+    el.className = "msg " + role + (opts.err ? " err" : "");
+    el.innerHTML = `<div class="avatar">${role === "you" ? "U" : "AI"}</div>
+      <div class="body"><div class="role">${role === "you" ? "you" : "assistant"}</div>
+      <div class="thinking"></div><div class="bubble"></div></div>`;
+    el.querySelector(".bubble").textContent = text;
+    log.appendChild(el);
+    log.scrollTop = log.scrollHeight;
+    return el;
+  }
+
+  function system(text) {
+    sysMsg.textContent = text;
+  }
+
+  // Poll backend health + engine state.
+  async function poll() {
+    try {
+      const r = await (await fetch("/health")).json();
+      if (!r.ok) { setStatus("err", "backend down"); engineUp = false; return; }
+      setStatus("ok", "backend up");
+      const m = await fetch("/api/models").then(r => r.json()).catch(() => ({ models:[], llama:false }));
+      renderModels(m.models || []);
+      engineUp = !!m.llama;
+      startBtn.disabled = engineUp;
+      startBtn.textContent = engineUp ? "Running" : "Start engine";
+      sendBtn.disabled = !engineUp || busy;
+      webBtn.disabled = !engineUp;
+      system(engineUp ? "Engine ready. Ask away." : "Backend up, engine not started. Click “Start engine”.");
+      try {
+        const v = await fetch("/api/voice/status").then(r => r.json()).catch(() => ({ available: false }));
+        micBtn.hidden = !v.available;
+      } catch (_) {}
+    } catch { setStatus("err", "cannot reach backend"); engineUp = false; sendBtn.disabled = true; }
+  }
+  setInterval(poll, 2500);
+  poll();
+
+  function renderModels(list) {
+    if (!list || !list.length) { modelSel.innerHTML = `<option>no model yet</option>`; modelSel.disabled = true; return; }
+    const cur = modelSel.value;
+    modelSel.innerHTML = list.map(m => `<option value="${m}">${m}</option>`).join("");
+    if (list.includes(cur)) modelSel.value = cur;
+    modelSel.disabled = false;
+  }
+
+  startBtn.addEventListener("click", async () => {
+    if (engineUp) return;
+    startBtn.disabled = true; startBtn.textContent = "Starting…";
+    system("Loading model into llama-server (can take ~30s on first load)…");
+    try {
+      const model = modelSel.value && modelSel.value !== "no model yet" ? modelSel.value : null;
+      const r = await fetch("/api/start?ngl=0" + (model ? "&model=" + encodeURIComponent(model) : ""), { method: "POST" });
+      const j = await r.json();
+      if (!r.ok || !j.ok) throw new Error((j.error?.message || "start failed") + (j.error?.tried?.length ? "  tried: " + j.error.tried.join(", ") : ""));
+      poll();
+    } catch (e) {
+      let detail = "";
+      try {
+        const r = await fetch("/api/logs").then(r2 => r2.json()).catch(() => ({}));
+        const lines = (r.lines || []).slice(-8);
+        if (lines.length) detail = "\n" + lines.join("\n");
+      } catch (_) {}
+      system("Start failed: " + e.message + detail);
+      startBtn.disabled = false; startBtn.textContent = "Start engine";
+    }
+  });
+
+  clearBtn.addEventListener("click", () => {
+    log.innerHTML = "";
+    const s = document.createElement("div"); s.className = "system"; s.id = "sysMsg";
+    s.textContent = engineUp ? "Cleared. Ask away." : "Cleared."; log.appendChild(s);
+  });
+
+  stopBtn.addEventListener("click", () => {
+    stopBtn.disabled = true;
+    system("Stopping… close this tab once the console window closes.");
+    fetch("/api/stop", { method: "POST" }).catch(() => {});
+  });
+
+  // Auto-grow the textarea.
+  promptEl.addEventListener("input", () => {
+    promptEl.style.height = "auto";
+    promptEl.style.height = Math.min(promptEl.scrollHeight, 220) + "px";
+  });
+  promptEl.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); send(); }
+  });
+  sendBtn.addEventListener("click", send);
+
+  webBtn.addEventListener("click", () => {
+    webOn = !webOn;
+    webBtn.classList.toggle("on", webOn);
+    webBtn.title = webOn ? "Web search ON — answers will be grounded" : "Search the web and ground the answer";
+    system(webOn ? "Web search ON for next messages." : "Web search off.");
+  });
+
+  // --- Voice-to-text (STT) ---------------------------------------------------
+  // Record raw 16 kHz mono PCM and encode a WAV client-side. whisper-server
+  // only accepts WAV (no webm/opus), so skip MediaRecorder entirely.
+  const SAMPLE_RATE = 16000;
+  let micCtx = null, voiceRec = null, recordFrames = [];
+
+  function encodeWav(frames, rate) {
+    let n = 0;
+    for (const ch of frames) n += ch.length;
+    const buf = new ArrayBuffer(44 + n * 2);
+    const dv = new DataView(buf);
+    const wstr = (o, s) => { for (let i = 0; i < s.length; i++) dv.setUint8(o + i, s.charCodeAt(i)); };
+    wstr(0, "RIFF"); dv.setUint32(4, 36 + n * 2, true); wstr(8, "WAVE");
+    wstr(12, "fmt "); dv.setUint32(16, 16, true); dv.setUint16(20, 1, true);
+    dv.setUint16(22, 1, true); dv.setUint32(24, rate, true); dv.setUint32(28, rate * 2, true);
+    dv.setUint16(32, 2, true); dv.setUint16(34, 16, true);
+    wstr(36, "data"); dv.setUint32(40, n * 2, true);
+    let off = 44;
+    for (const ch of frames) for (let i = 0; i < ch.length; i++) {
+      dv.setInt16(off, Math.max(-32768, Math.min(32767, ch[i] * 32767)), true); off += 2;
+    }
+    return new Blob([buf], { type: "audio/wav" });
+  }
+
+  // AudioContext sampleRate is fixed per device; if it isn't 16k we resample
+  // by simple linear decimation to keep the WAV at 16 kHz as whisper expects.
+  function to16k(buffer, ctxRate) {
+    if (ctxRate === SAMPLE_RATE) return buffer;
+    const ratio = ctxRate / SAMPLE_RATE;
+    const out = new Float32Array(Math.floor(buffer.length / ratio));
+    for (let i = 0; i < out.length; i++) out[i] = buffer[Math.floor(i * ratio)];
+    return out;
+  }
+
+  async function startRecording() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      micCtx = new AudioContext();
+      const src = micCtx.createMediaStreamSource(stream);
+      const sp = micCtx.createScriptProcessor(4096, 1, 1);
+      recordFrames = [];
+      sp.onaudioprocess = (ev) => {
+        const ch = ev.inputBuffer.getChannelData(0);
+        recordFrames.push(new Float32Array(to16k(ch, micCtx.sampleRate)));
+      };
+      src.connect(sp); sp.connect(micCtx.destination);
+      voiceRec = { stream, src, sp };
+      micBtn.classList.add("rec"); micBtn.title = "Stop recording";
+    } catch (e) {
+      system("Mic error: " + e.message);
+    }
+  }
+
+  function stopRecording() {
+    if (!voiceRec) return;
+    const { stream, src, sp } = voiceRec;
+    sp.disconnect(); src.disconnect();
+    micCtx.close(); micCtx = null;
+    stream.getTracks().forEach((t) => t.stop());
+    voiceRec = null; micBtn.classList.remove("rec"); micBtn.title = "Speak instead of typing (voice-to-text)";
+    void transcribeFrames(recordFrames);
+  }
+
+  async function transcribeFrames(frames) {
+    if (!frames.length) return;
+    micBtn.disabled = true;
+    system("Transcribing…");
+    try {
+      const wav = encodeWav(frames, SAMPLE_RATE);
+      const r = await fetch("/api/voice/transcribe", { method: "POST", body: wav });
+      const j = await r.json().catch(() => ({}));
+      if (j.text) {
+        promptEl.value = j.text.trim(); promptEl.dispatchEvent(new Event("input"));
+        sendBtn.disabled = !engineUp || busy;
+      } else system("Nothing heard. Try again.");
+    } catch (e) {
+      system("Transcribe failed: " + e.message);
+    } finally {
+      micBtn.disabled = false;
+    }
+  }
+
+  micBtn.addEventListener("click", () => (voiceRec ? stopRecording() : startRecording()));
+
+  let history = [];
+  async function send() {
+    if (busy || !engineUp) return;
+    const text = promptEl.value.trim();
+    if (!text) return;
+    promptEl.value = ""; promptEl.style.height = "auto";
+    addMsg("you", text);
+    const aiEl = addMsg("ai", "");
+    const thinkEl = aiEl.querySelector(".thinking");
+    const aiBubble = aiEl.querySelector(".bubble");
+    busy = true; sendBtn.disabled = true;
+    const statusTxt = webOn ? "Searching the web" : "Thinking";
+    let dots = 0, ticker = null;
+    aiBubble.textContent = statusTxt + "…";
+    ticker = setInterval(() => {
+      dots = (dots + 1) % 4;
+      aiBubble.textContent = statusTxt + ".".repeat(dots);
+    }, 400);
+
+    const messages = history.concat([{ role: "user", content: text }]);
+
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages, stream: true, temperature: 0.7, max_tokens: 1024, web: webOn }),
+      });
+      if (!res.ok) { const j = await res.json().catch(() => ({})); throw new Error(j.error?.message || `HTTP ${res.status}`); }
+
+      const reader = res.body.getReader(); const dec = new TextDecoder();
+      let acc = ""; let thinkAcc = ""; let buf = "";
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buf += dec.decode(value, { stream: true });
+        const lines = buf.split("\n"); buf = lines.pop();
+        for (let line of lines) {
+          line = line.trim();
+          if (!line || !line.startsWith("data:")) continue;
+          const payload = line.slice(5).trim();
+          if (payload === "[DONE]") continue;
+          try {
+            const obj = JSON.parse(payload);
+            const d = obj.choices?.[0]?.delta || {};
+            if (ticker && (d.reasoning_content || d.content)) { clearInterval(ticker); ticker = null; }
+            if (d.reasoning_content) {
+              thinkAcc += d.reasoning_content;
+              thinkEl.textContent = "thinking… " + thinkAcc;
+              thinkEl.classList.add("show");
+            }
+            if (d.content) {
+              acc += d.content;
+              aiBubble.textContent = acc;
+            }
+            if (acc) aiBubble.textContent = acc;
+            log.scrollTop = log.scrollHeight;
+          } catch (_) {}
+        }
+      }
+      if (thinkAcc) thinkEl.textContent = "…" + thinkAcc;
+      history = messages.concat([{ role: "assistant", content: acc || thinkAcc }]);
+    } catch (e) {
+      aiBubble.textContent = "Error: " + e.message;
+      aiBubble.parentElement.classList.add("err");
+    } finally {
+      if (ticker) { clearInterval(ticker); ticker = null; }
+      busy = false; sendBtn.disabled = !engineUp;
+    }
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+# Build outputs / vendored / large binaries — keep this folder portable.
+bin/
+runtime/
+models/
+logs/
+node_modules/
+*.part
+*.zip
+node.zip
+node.tgz
+node.tar.xz
+# Local launcher scratch
+aiusb_*.zip
+aiusb_gpus.txt
+# OS junk
+.DS_Store
+Thumbs.db
