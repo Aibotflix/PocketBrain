@@ -109,11 +109,13 @@ failed, the button stays hidden. macOS voice is not supported (whisper.cpp
 publishes no macOS prebuilt binary).
 
 ### Web search (grounded answers)
-Click 🌐 so it lights up — it stays on until you click it off. While on, every
-message gets real search results (top 5) injected as context before the model
-answers, so replies cite real sources from today instead of the model's
-training data. If offline, the model just answers from memory.
-Off by default: recipients who never click 🌐 stay fully offline.
+Web search is **on by default** — every message gets real search results (top
+5) injected as context before the model answers, so replies cite real sources
+from today instead of the model's training data (the date is also injected
+into the system prompt every message, so the model always knows today's date).
+Click 🌐 to switch it off (per message or permanently); while off, the model
+answers from memory. If the machine is offline, search fails silently and the
+model answers from memory either way.
 
 ### Installing more models
 Drop any `.gguf` file into `models/`, refresh the page, and pick it from the

@@ -142,7 +142,7 @@
 
   let engineUp = false;
   let busy = false;
-  let webOn = false;
+  let webOn = true;
 
   function setStatus(s, text) {
     dot.className = "dot" + (s === "ok" ? " ok" : s === "err" ? " err" : "");
@@ -178,6 +178,8 @@
       startBtn.textContent = engineUp ? "Running" : "Start engine";
       sendBtn.disabled = !engineUp || busy;
       webBtn.disabled = !engineUp;
+      webBtn.classList.add("on");
+      webBtn.title = "Web search ON — answers will be grounded";
       system(engineUp ? "Engine ready. Ask away." : "Backend up, engine not started. Click “Start engine”.");
       try {
         const v = await fetch("/api/voice/status").then(r => r.json()).catch(() => ({ available: false }));
