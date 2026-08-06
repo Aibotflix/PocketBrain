@@ -5,11 +5,12 @@ param(
 # Fast zip extraction with a real progress bar. Uses System.IO.Compression
 # (5-10x faster than Expand-Archive). FAT/exFAT USB sticks can't restore some
 # archive timestamps - skip any entry that errors instead of dying.
+$ErrorActionPreference = "Stop"
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 New-Item -ItemType Directory -Force -Path $Dest | Out-Null
-$zip = [System.IO.Compression.ZipFile]::OpenRead($Zip)
+$archive = [System.IO.Compression.ZipFile]::OpenRead($Zip)
 try {
-  $entries = @($zip.Entries)
+  $entries = @($archive.Entries)
   $count = $entries.Count
   $i = 0
   foreach ($e in $entries) {
@@ -30,5 +31,5 @@ try {
   }
   Write-Progress -Activity "Extracting $(Split-Path $Zip -Leaf)" -Completed
 } finally {
-  $zip.Dispose()
+  $archive.Dispose()
 }
