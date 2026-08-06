@@ -82,7 +82,7 @@ function buildArgs(bin, model, opts = {}) {
     "--host", LLAMA_HOST,
     "--port", String(LLAMA_PORT),
     "--alias", "stickai",
-    "--ctx-size", String(opts.ctx || 4096),
+    "--ctx-size", String(opts.ctx || 8192),
     "--cont-batching",
     "--parallel", "1",
     "--temp", String(opts.temp || 0.7),

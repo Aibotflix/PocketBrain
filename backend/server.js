@@ -15,12 +15,12 @@ const { search } = require("./search");
 // Set by main() once the signal handlers are wired; used by POST /api/stop.
 let shutdownApp = null;
 
-// llama-server runs with --ctx-size 4096; a long chat + injected web results
+// llama-server runs with --ctx-size 8192; a long chat + injected web results
 // can exceed that and the request gets cancelled with an error. Keep the
 // prompt + answer under ctx by trimming oldest history. Reserved answer budget
-// 1024 tokens (--ctx 4096) so prompt budget is ~3072. Never drop system/grounding
+// 1024 tokens (--ctx 8192) so prompt budget is ~6144. Never drop system/grounding
 // messages or the newest user message. chars/4 is a rough token estimate.
-const CTX_BUDGET = 3072;
+const CTX_BUDGET = 6144;
 const estTokens = (s) => Math.ceil((s || "").length / 4) + 8;
 function fitMessages(msgs) {
   const keep = (m, i) => m.role === "system" || i === msgs.length - 1;
