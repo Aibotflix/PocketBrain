@@ -62,7 +62,10 @@ runs on that computer, nothing is uploaded, no account needed.
 ## What it does
 
 - **Chat with a real LLM, fully offline** — a Qwen3.5-2B model runs locally via
-  llama.cpp. No cloud, no API key, no signup, no telemetry.
+  llama.cpp, accelerated by speculative decoding: a small Qwen3.5-0.8B "draft"
+  model pre-guesses tokens and the 2B accepts/rejects them in batches, giving
+  ~1.3–1.5x faster answers with identical quality. No cloud, no API key, no
+  signup, no telemetry.
 - **Voice input** — speak instead of typing; a local whisper.cpp server turns
   your voice into text. Audio never leaves the machine.
 - **Web search (optional, per message)** — toggle 🌐 and answers get grounded
@@ -83,6 +86,8 @@ runs on that computer, nothing is uploaded, no account needed.
    - a portable Node.js runtime into `runtime/` (skipped if `node` is on PATH),
    - the matching prebuilt `llama-server` for your OS/GPU into `bin/`,
    - the chat model `Qwen3.5-2B-Q4_K_M.gguf` (~1.2 GB) into `models/`,
+   - the speculative-decoding draft `Qwen3.5-0.8B-Q4_K_M.gguf` (~0.5 GB) into
+     `models/` — reused automatically for faster answers on every later run,
    - the whisper STT server + voice model on Windows/Linux (~150 MB).
 4. Your browser opens at `http://127.0.0.1:3000`.
 5. Click **Start engine** (top right) — first load takes ~30 s — then chat.
@@ -112,13 +117,19 @@ Off by default: recipients who never click 🌐 stay fully offline.
 
 ### Installing more models
 Drop any `.gguf` file into `models/`, refresh the page, and pick it from the
-dropdown in the header (it scans `models/` for `*.gguf` on load). Click
-**Start engine** to load the new one. Tips:
+dropdown in the header (it scans `models/` for `*.gguf` on load; the draft
+model is hidden from the picker by design). Click **Start engine** to load
+the new one. Tips:
 
 - Any GGUF works (LLaMA, Mistral, Gemma, Qwen…), but llama.cpp needs a
   matching `llama-server` — the pinned binary supports all current formats.
 - Bigger isn't better on a USB: 2B–8B Q4 quantizations fit the 4 GB stick and
   run on CPU. Larger models (13B+) need a discrete GPU.
+- **Quality upgrade:** `node backend/download_model.js MODEL_4B` grabs
+  Qwen3.5-4B Q4_K_M (~2.3 GB) — noticeably smarter, still fast on CPU, and
+  the 0.8B draft accelerates it too. Delete the file to go back.
+- The draft (`Qwen3.5-0.8B-Q4_K_M.gguf`) is only a speed booster — never
+  pick it as the chat model. Deleting it disables the speedup, nothing else.
 - The STT voice model is separate: `models/ggml-base.en.bin` (don't rename).
 
 ## Turning it off
@@ -139,16 +150,20 @@ dropdown in the header (it scans `models/` for `*.gguf` on load). Click
   frontend and proxies chat (`/api/chat` → SSE tokens).
 - Everything is relative to the app folder; nothing is written outside it.
   That's the whole USB-portability contract.
-- Windows runs llama-server with `--no-mmap` because memory-mapped GGUFs on
-  FAT/exFAT page-fault to death on a USB stick.
+- Windows runs llama-server with `--load-mode mlock` because memory-mapped
+  GGUFs on FAT/exFAT page-fault to death on a USB stick.
+- If `models/Qwen3.5-0.8B-Q4_K_M.gguf` is present, llama-server also gets
+  `--model-draft` — speculative decoding. The small model guesses tokens, the
+  main model validates them in batches: same output quality, ~1.3–1.5x speed.
 
 ## Minimum USB size
 
-**Use a 4 GB stick** (formats to ~3.7 GB usable). The clean folder is ~1.4 GB
+**Use a 4 GB stick** (formats to ~3.7 GB usable). The clean folder is ~1.9 GB
 and first-run downloads for any machine fit with room to spare:
 
 ```
 models/Qwen3.5-2B-Q4_K_M.gguf    ~1.2 GB   chat model
+models/Qwen3.5-0.8B-Q4_K_M.gguf  ~0.5 GB   speedup draft (speculative decoding)
 models/ggml-base.en.bin          ~141 MB   voice model
 backend + frontend + launchers   ~60 KB
 ```
@@ -192,7 +207,7 @@ replaced by re-detection anyway.
 
 - USB 4 GB or larger (see above).
 - An x64 or ARM64 CPU with AVX2 (x64) — real GPU builds want a discrete GPU.
-- ~2 GB free space locally for model + binaries.
+- ~2.5 GB free space locally for models + binaries.
 - Internet only on the very first run of a given machine.
 - No admin rights, no installers, no Node.js needed (vendored automatically).
 
