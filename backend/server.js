@@ -193,12 +193,13 @@ async function handle(req, res) {
     }
   }
 
-  // In-page Stop: same code path as Ctrl+C — stops llama/whisper, then exits.
-  // Reply first, then exit on a short timer so the browser sees "stopped".
+  // In-page Stop: stops llama/whisper but keeps the backend alive, so the
+  // user can click Start again. To fully quit, close the console window
+  // (or Ctrl+C) — shutdown() there stops children then exits.
   if (req.method === "POST" && p === "/api/stop") {
-    sendJSON(res, 200, { ok: true });
-    setTimeout(() => (shutdownApp || (async () => process.exit(0)))(), 200);
-    return;
+    return Promise.all([llama.stop(), whisper.stop()])
+      .then(() => sendJSON(res, 200, { ok: true, stopped: true }))
+      .catch((e) => sendJSON(res, 500, { error: { message: e.message } }));
   }
 
   if (req.method === "POST" && p === "/api/start") {
