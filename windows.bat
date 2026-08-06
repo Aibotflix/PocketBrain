@@ -132,7 +132,9 @@ if !errorlevel!==0 (
 )
 where tar >nul 2>nul
 if %errorlevel%==0 (
-  tar -xf "%DL_ZIP%" -C "%ASSET_DIR%"
+  rem -m = don't restore archive timestamps (FAT/exFAT USB can't store some
+  rem ranges; otherwise tar spams "Can't restore time" per file).
+  tar -mxf "%DL_ZIP%" -C "%ASSET_DIR%"
 ) else (
   powershell -NoProfile -Command "Expand-Archive -LiteralPath '%DL_ZIP%' -DestinationPath '%ASSET_DIR%' -Force"
 )
