@@ -130,13 +130,17 @@ echo !VARIANT! | findstr /i "cuda hip sycl" >nul
 if !errorlevel!==0 (
   echo [bin] extracting - GPU builds are large, this can take several minutes...
 )
-where tar >nul 2>nul
-if %errorlevel%==0 (
-  rem -m = don't restore archive timestamps (FAT/exFAT USB can't store some
-  rem ranges; otherwise tar spams "Can't restore time" per file).
-  tar -mxf "%DL_ZIP%" -C "%ASSET_DIR%"
-) else (
-  powershell -NoProfile -Command "Expand-Archive -LiteralPath '%DL_ZIP%' -DestinationPath '%ASSET_DIR%' -Force"
+powershell -NoProfile -ExecutionPolicy Bypass -File "%ROOT%\backend\extract.ps1" -Zip "%DL_ZIP%" -Dest "%ASSET_DIR%"
+if errorlevel 1 (
+  rem Fallback: tar (no progress bar) or Expand-Archive (slow) if the script fails.
+  where tar >nul 2>nul
+  if %errorlevel%==0 (
+    rem -m = don't restore archive timestamps (FAT/exFAT USB can't store some
+    rem ranges; otherwise tar spams "Can't restore time" per file).
+    tar -mxf "%DL_ZIP%" -C "%ASSET_DIR%"
+  ) else (
+    powershell -NoProfile -Command "Expand-Archive -LiteralPath '%DL_ZIP%' -DestinationPath '%ASSET_DIR%' -Force"
+  )
 )
 del "%DL_ZIP%" 2>nul
 
@@ -149,11 +153,14 @@ if %NEED_CUDART%==1 (
   if errorlevel 1 (
     echo [bin] WARN: cudart download failed; CUDA may not run. Try a CPU build instead.
   ) else (
-    where tar >nul 2>nul
-    if %errorlevel%==0 (
-      tar -xf "%CUDART_ZIP%" -C "%ASSET_DIR%"
-    ) else (
-      powershell -NoProfile -Command "Expand-Archive -LiteralPath '%CUDART_ZIP%' -DestinationPath '%ASSET_DIR%' -Force"
+    powershell -NoProfile -ExecutionPolicy Bypass -File "%ROOT%\backend\extract.ps1" -Zip "%CUDART_ZIP%" -Dest "%ASSET_DIR%"
+    if errorlevel 1 (
+      where tar >nul 2>nul
+      if %errorlevel%==0 (
+        tar -mxf "%CUDART_ZIP%" -C "%ASSET_DIR%"
+      ) else (
+        powershell -NoProfile -Command "Expand-Archive -LiteralPath '%CUDART_ZIP%' -DestinationPath '%ASSET_DIR%' -Force"
+      )
     )
     del "%CUDART_ZIP%" 2>nul
   )
@@ -178,11 +185,14 @@ if exist "%WHISPER_BIN%" (
   if errorlevel 1 (
     echo [whisper] WARN: whisper download failed; voice-to-text will be disabled.
   ) else (
-    where tar >nul 2>nul
-    if %errorlevel%==0 (
-      tar -xf "%TEMP%\aiusb_whisper.zip" -C "%ROOT%\bin\whisper-win-x64" 2>nul
-    ) else (
-      powershell -NoProfile -Command "Expand-Archive -LiteralPath '%TEMP%\aiusb_whisper.zip' -DestinationPath '%ROOT%\bin\whisper-win-x64' -Force"
+    powershell -NoProfile -ExecutionPolicy Bypass -File "%ROOT%\backend\extract.ps1" -Zip "%TEMP%\aiusb_whisper.zip" -Dest "%ROOT%\bin\whisper-win-x64"
+    if errorlevel 1 (
+      where tar >nul 2>nul
+      if %errorlevel%==0 (
+        tar -mxf "%TEMP%\aiusb_whisper.zip" -C "%ROOT%\bin\whisper-win-x64" 2>nul
+      ) else (
+        powershell -NoProfile -Command "Expand-Archive -LiteralPath '%TEMP%\aiusb_whisper.zip' -DestinationPath '%ROOT%\bin\whisper-win-x64' -Force"
+      )
     )
     del "%TEMP%\aiusb_whisper.zip" 2>nul
   )
