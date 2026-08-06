@@ -26,6 +26,39 @@ Stick-Ai/
 └── logs/           # llama-server.log, whisper.log
 ```
 
+## Install it (no technical skills needed)
+
+1. **Get the files.** On this page (GitHub), click the green **Code** button,
+   then **Download ZIP**. Your computer saves a file called
+   `Stick-Ai-main.zip`.
+2. **Plug in a USB stick** (4 GB or bigger).
+3. **Unzip onto the USB.** Right-click the ZIP → "Extract All…" (Windows) or
+   double-click it (Mac/Linux) → put the resulting `Stick-Ai-main` folder on
+   the USB drive.
+4. **Start it — depending on your computer:**
+
+   - **Windows:** double-click the file named `windows.bat`.
+   - **Mac:** open the **Terminal** app (Spotlight → type "Terminal"), type
+     `sh ` (a space at the end), then drag the file named `mac.sh` from the
+     USB onto the Terminal window, then press Enter.
+   - **Linux:** open a terminal and run `sh linux.sh` (or drag the `linux.sh`
+     file onto it like the Mac step).
+
+   A black window opens and starts downloading the AI parts. It needs
+   internet and takes **5–15 minutes the first time**. Let it finish — don't
+   close the black window.
+5. **Chat.** Your browser opens on its own. Click **Start engine** (top right),
+   wait ~30 seconds, then type a message and press Enter.
+
+That's it. The next time, just plug the USB in and start it the same way —
+it works **without internet**. (The black window must stay open while you
+chat; the Stop button in the app closes it for you.)
+
+**You need internet only the first time on each computer.** Everything else
+runs on that computer, nothing is uploaded, no account needed.
+
+---
+
 ## What it does
 
 - **Chat with a real LLM, fully offline** — a Qwen3.5-2B model runs locally via
