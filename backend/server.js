@@ -353,6 +353,37 @@ async function main() {
       try { sendJSON(res, 500, { error: { message: e.message } }); } catch (_) {}
     });
   });
+  server.on("error", (err) => {
+    if (err.code === "EADDRINUSE" || err.code === "EACCES") {
+      // Another Stick AI instance (or a stale one from a previous session) is
+      // already on this port. If it's ours, just open the browser - no error.
+      // If it's some other program, say so clearly instead of dying silently.
+      const probe = http.get({ host: "127.0.0.1", port, path: "/" }, (r) => {
+        const chunks = [];
+        r.on("data", (c) => chunks.push(c));
+        r.on("end", () => {
+          const body = Buffer.concat(chunks).toString();
+          if (body.includes("Stick AI")) {
+            console.log(`[stickai] already running on port ${port} - opening browser`);
+            openBrowser(`http://127.0.0.1:${port}`);
+            process.exit(0);
+          } else {
+            console.error(`[stickai] ERROR: port ${port} is in use by another program.`);
+            console.error(`[stickai] Close that program (or the stale window) and re-run.`);
+            process.exit(1);
+          }
+        });
+      });
+      probe.on("error", () => {
+        console.error(`[stickai] ERROR: port ${port} is in use. Close the stale window and re-run.`);
+        process.exit(1);
+      });
+    } else {
+      console.error("[stickai] server error:", err);
+      process.exit(1);
+    }
+  });
+
   server.listen(port, "127.0.0.1", () => {
     console.log(`[stickai] backend on http://127.0.0.1:${port}`);
     console.log(`[stickai] open http://127.0.0.1:${port} in your browser`);
