@@ -301,8 +301,9 @@ function handleChat(req, res) {
   const chunks = [];
   req.on("data", (c) => chunks.push(c));
   req.on("end", () => {
+    let body = {};
     try {
-      const body = JSON.parse(chunks.length ? Buffer.concat(chunks).toString() : "{}");
+      body = JSON.parse(chunks.length ? Buffer.concat(chunks).toString() : "{}");
     } catch (e) {
       return sendJSON(res, 400, { error: { message: "bad json: " + e.message } });
     }
