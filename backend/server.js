@@ -329,7 +329,7 @@ function handleChat(req, res) {
     // for web results. This is the "caveman" style trick for chat.
     // The real date is injected because local models have no clock and
     // otherwise hallucinate it from training data.
-    const DIRECTIVE = `Be brief. Keep all facts. Today's date is ${new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}.`;
+    const DIRECTIVE = `Be brief. Keep all facts. Today's date is ${new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}. Current time is ${new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true })}.`;
 
     // ---- Tool calling (the model proposes, the backend executes) ----------
     // Only write_file is exposed: saves generated files (HTML, code) into
