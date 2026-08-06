@@ -307,7 +307,7 @@ function handleChat(req, res) {
     // Terse output directive: on slow local hardware (CPU ~5 t/s) every
     // output token is wall-clock time, and shorter answers free context
     // for web results. This is the "caveman" style trick for chat.
-    const DIRECTIVE = "Be concise: no filler, no greeting, no repeating the question. For ordinary chat, answer in 1-3 sentences unless the user asks for detail. When rewriting or summarizing text you are given, keep every fact, name, number, date, and attribution — cut style, never content, and do not cap the length. Quote the source briefly when using web results.";
+    const DIRECTIVE = "Be brief. Keep all facts.";
 
     // llama.cpp's template allows only ONE leading system message — merge the
     // directive, any incoming leading system message, and the web-results
