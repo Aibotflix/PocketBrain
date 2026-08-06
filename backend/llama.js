@@ -49,8 +49,10 @@ function findLlamaServer() { return findAllServers()[0] || null; }
 
 function listModels() {
   if (!fs.existsSync(MODELS_DIR)) return [];
+  // The draft model is never selectable as the main model.
+  const draft = require("./config").DRAFT_MODEL.name;
   return fs.readdirSync(MODELS_DIR)
-    .filter((f) => /\.gguf$/i.test(f))
+    .filter((f) => /\.gguf$/i.test(f) && f !== draft)
     .map((f) => path.join(MODELS_DIR, f));
 }
 
