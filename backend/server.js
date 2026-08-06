@@ -7,6 +7,8 @@ const path = require("path");
 const { spawn } = require("child_process");
 
 const { APP_ROOT, FRONTEND_DIR, LOGS_DIR, LLAMA_HOST, LLAMA_PORT, WHISPER_HOST, WHISPER_PORT } = require("./config");
+// Where the write_file tool saves generated files (HTML, code, etc).
+const OUTPUT_DIR = path.join(APP_ROOT, "outputs");
 const { LlamaServer, listModels } = require("./llama");
 const { WhisperServer, findWhisperServer, findWhisperModel } = require("./whisper");
 const { downloadModel } = require("./download");
@@ -228,6 +230,21 @@ async function handle(req, res) {
   // streaming defaults to SSE; false returns JSON.
   if (req.method === "POST" && p === "/api/chat") return handleChat(req, res);
 
+  // Files written by the write_file tool (e.g. a generated HTML file).
+  // Served from APP_ROOT/outputs only, so the tool can't be abused to
+  // read/write elsewhere on the machine.
+  if (req.method === "GET" && p === "/api/file") {
+    const name = path.basename(parsed.searchParams.get("name") || "");
+    if (!name) return sendJSON(res, 400, { error: { message: "missing name" } });
+    const file = path.join(OUTPUT_DIR, name);
+    if (!file.startsWith(OUTPUT_DIR)) return sendJSON(res, 403, { error: { message: "forbidden" } });
+    return fs.readFile(file, (err, data) => {
+      if (err) return sendJSON(res, 404, { error: { message: "not found" } });
+      const ext = path.extname(file).toLowerCase();
+      return send(res, 200, data, { "Content-Type": MIME[ext] || "application/octet-stream", "Content-Disposition": `attachment; filename="${name}"` });
+    });
+  }
+
   if (req.method === "GET") return serveStatic(req, res, p);
   return sendJSON(res, 404, { error: "not found" });
 }
@@ -310,6 +327,101 @@ function handleChat(req, res) {
     // for web results. This is the "caveman" style trick for chat.
     const DIRECTIVE = "Be brief. Keep all facts.";
 
+    // ---- Tool calling (the model proposes, the backend executes) ----------
+    // Only write_file is exposed: saves generated files (HTML, code) into
+    // APP_ROOT/outputs. Kept to a single tool because a 2B model loses
+    // coherence past one; unknown names get an error back so it can retry.
+    const TOOLS = [{
+      type: "function",
+      function: {
+        name: "write_file",
+        description: "Save generated content (HTML page, code, text) to a file the user can open. Use when the user asks to create or save a file.",
+        parameters: {
+          type: "object",
+          properties: {
+            filename: { type: "string", description: "File name including extension, e.g. page.html" },
+            content: { type: "string", description: "Full file content" },
+          },
+          required: ["filename", "content"],
+        },
+      },
+    }];
+
+    const MAX_TOOL_ROUNDS = 3;
+
+    // Non-streaming round-trip to llama-server; returns the parsed JSON.
+    const llamaChat = (effective, tools) => new Promise((resolve, reject) => {
+      const upBody = JSON.stringify({
+        messages: effective,
+        temperature: body.temperature ?? 0.7,
+        top_p: body.top_p ?? 0.9,
+        max_tokens: body.max_tokens ?? 1024,
+        stream: false,
+        ...(tools ? { tools } : {}),
+      });
+      const out = [];
+      const upstream = http.request({
+        host: LLAMA_HOST, port: LLAMA_PORT, path: "/v1/chat/completions", method: "POST",
+        headers: { "Content-Type": "application/json", "Content-Length": Buffer.byteLength(upBody) },
+        timeout: 120_000,
+      }, (up) => {
+        up.on("data", (b) => out.push(b));
+        up.on("end", () => {
+          try { resolve({ status: up.statusCode || 502, json: JSON.parse(Buffer.concat(out).toString()) }); }
+          catch (e) { reject(new Error("llama bad response: " + e.message)); }
+        });
+        up.on("error", reject);
+      });
+      upstream.on("error", reject);
+      upstream.write(upBody);
+      upstream.end();
+    });
+
+    // Execute one tool call; never throw. Guards: basename-only filename,
+    // size cap, unknown tool name -> error string the model can recover from.
+    const execTool = async (call) => {
+      const fn = call && call.function && call.function.name;
+      if (fn !== "write_file") return JSON.stringify({ error: `Unknown tool "${fn}". Available tools: write_file` });
+      let args = {};
+      try { args = JSON.parse(call.function.arguments || "{}"); } catch (_) { return JSON.stringify({ error: "Bad arguments JSON" }); }
+      const name = path.basename(String(args.filename || "").trim());
+      if (!name || name.includes("\\")) return JSON.stringify({ error: "filename must be a plain name like page.html" });
+      const content = String(args.content || "");
+      // The content is echoed back into context for the model's final answer,
+      // so cap it to fit the 8K window (~6K tokens); bigger files get a hint
+      // to split. The file itself is always saved in full.
+      if (content.length > 24_000) return JSON.stringify({ error: "content too large — max 24000 chars per file, split into multiple files" });
+      try {
+        fs.mkdirSync(OUTPUT_DIR, { recursive: true });
+        fs.writeFileSync(path.join(OUTPUT_DIR, name), content, "utf8");
+        return JSON.stringify({ ok: true, url: `/api/file?name=${encodeURIComponent(name)}` });
+      } catch (e) {
+        return JSON.stringify({ error: e.message });
+      }
+    };
+
+    // Tool loop: run until the model answers without tool calls, max 3 rounds.
+    const runWithTools = async (effective) => {
+      for (let i = 0; i < MAX_TOOL_ROUNDS; i++) {
+        const r = await llamaChat(effective, TOOLS);
+        const msg = r.json && r.json.choices && r.json.choices[0] && r.json.choices[0].message;
+        if (!msg) return r;
+        const calls = Array.isArray(msg.tool_calls) ? msg.tool_calls : [];
+        if (!calls.length) return r;
+        effective.push({ role: "assistant", content: msg.content || "", tool_calls: calls });
+        for (const call of calls) {
+          const result = await execTool(call);
+          effective.push({
+            role: "tool",
+            tool_call_id: (call && call.id) || "call_0",
+            name: (call.function || {}).name || "unknown",
+            content: result,
+          });
+        }
+      }
+      return { status: 200, json: { error: "tool loop exceeded rounds" } };
+    };
+
     // llama.cpp's template allows only ONE leading system message — merge the
     // directive, any incoming leading system message, and the web-results
     // grounding into a single system message instead of stacking them.
@@ -318,6 +430,29 @@ function handleChat(req, res) {
       const rest = base ? messages.slice(1) : messages;
       const parts = [DIRECTIVE, base && base.content, sysMsg && sysMsg.content].filter(Boolean);
       const effective = fitMessages([{ role: "system", content: parts.join("\n\n") }, ...rest]);
+
+      // Tool mode: run the (non-streaming) tool loop, then relay the final
+      // answer as SSE so the frontend render path stays identical.
+      if (body.tools) {
+        res.writeHead(200, {
+          "Content-Type": "text/event-stream",
+          "Cache-Control": "no-store",
+          "Connection": "keep-alive",
+        });
+        try {
+          const r = await runWithTools(effective);
+          const msg = r.json && r.json.choices && r.json.choices[0] && r.json.choices[0].message;
+          const text = (msg && msg.content) || "";
+          res.write(`data: ${JSON.stringify({ choices: [{ delta: { content: text } }] })}\n\n`);
+          if (r.status !== 200) res.write(`data: ${JSON.stringify({ error: r.json && r.json.error })}\n\n`);
+        } catch (e) {
+          res.write(`data: ${JSON.stringify({ error: { message: e.message } })}\n\n`);
+        }
+        res.write("data: [DONE]\n\n");
+        res.end();
+        return;
+      }
+
       const upstreamBody = JSON.stringify({
         messages: effective,
         temperature: body.temperature ?? 0.7,
