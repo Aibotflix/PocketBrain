@@ -1,12 +1,16 @@
 // CLI: node backend/download_model.js [url] [name]
 // Downloads the default model (or an override) into models/.
+// Config keys (DEFAULT_MODEL, MODEL_4B, DRAFT_MODEL) are accepted as a bare
+// first arg, e.g.: node backend/download_model.js DRAFT_MODEL
 const { downloadModel } = require("./download");
-const { DEFAULT_MODEL } = require("./config");
+const cfg = require("./config");
 
 (async () => {
-  const model = process.argv[2]
-    ? { ...DEFAULT_MODEL, url: process.argv[2], name: process.argv[3] || DEFAULT_MODEL.name }
-    : DEFAULT_MODEL;
+  const arg = process.argv[2];
+  let model;
+  if (!arg) model = cfg.DEFAULT_MODEL;
+  else if (cfg[arg]) model = cfg[arg]; // bare config key, e.g. DRAFT_MODEL
+  else model = { ...cfg.DEFAULT_MODEL, url: arg, name: process.argv[3] || cfg.DEFAULT_MODEL.name };
   try {
     const dest = await downloadModel(model);
     console.log("OK", dest);

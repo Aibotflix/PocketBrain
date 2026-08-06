@@ -45,6 +45,26 @@ module.exports = {
     sizeHint: 1_221_000_000,
   },
 
+  // Quality upgrade: Qwen3.5-4B Q4_K_M (~2.3 GB). Beats Phi-4-mini on most
+  // benchmarks; same family/tokenizer as the default so the draft below
+  // works for it too. Not part of the default install.
+  MODEL_4B: {
+    name: "Qwen3.5-4B-Q4_K_M.gguf",
+    repo: "unsloth/Qwen3.5-4B-GGUF",
+    url: "https://huggingface.co/unsloth/Qwen3.5-4B-GGUF/resolve/main/Qwen3.5-4B-Q4_K_M.gguf",
+    sizeHint: 2_300_000_000,
+  },
+
+  // Speculative-decoding draft (~533 MB). Same family + tokenizer as the
+  // main models (rule #1 for drafts) — llama-server auto-uses it when the
+  // file is present: ~1.3-1.5x faster answers, zero quality loss.
+  DRAFT_MODEL: {
+    name: "Qwen3.5-0.8B-Q4_K_M.gguf",
+    repo: "unsloth/Qwen3.5-0.8B-GGUF",
+    url: "https://huggingface.co/unsloth/Qwen3.5-0.8B-GGUF/resolve/main/Qwen3.5-0.8B-Q4_K_M.gguf",
+    sizeHint: 533_000_000,
+  },
+
   // llama-server startup timeout (ms). Model load can take a while.
   STARTUP_TIMEOUT: 180_000,
   SHUTDOWN_TIMEOUT: 5_000,

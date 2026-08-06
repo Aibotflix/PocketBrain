@@ -139,6 +139,17 @@ else
   "$NODE_CMD" "$ROOT/backend/download_model.js"
 fi
 
+# Speculative-decoding draft (~0.5 GB). Same family as the main model, so
+# llama-server auto-uses it for ~1.3-1.5x faster answers. Optional: if this
+# download fails, the app still works, just without the speedup.
+DRAFT_FILE="Qwen3.5-0.8B-Q4_K_M.gguf"
+if [ -f "$ROOT/models/$DRAFT_FILE" ]; then
+  echo "[model] cached: $DRAFT_FILE"
+else
+  echo "[model] downloading $DRAFT_FILE (~0.5 GB, speeds up answers)..."
+  "$NODE_CMD" "$ROOT/backend/download_model.js" DRAFT_MODEL || echo "[model] WARN: draft download failed; running without it."
+fi
+
 # --- Start backend ----------------------------------------------------------
 echo
 echo "[stickai] starting backend..."

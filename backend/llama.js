@@ -91,6 +91,11 @@ function buildArgs(bin, model, opts = {}) {
   ];
   if (get(opts.ngl) !== null) a.push("-ngl", String(opts.ngl));
   if (isWin) a.push("--load-mode", "mlock"); // keep model in RAM; mmap on FAT/exFAT page-faults to death
+  // Speculative decoding: if the draft GGUF is present, hand it to
+  // llama-server. Same-family/tokenizer model -> ~1.3-1.5x faster tokens.
+  // Cross-family drafts are auto-rejected by llama.cpp itself (WARN only).
+  const draft = path.join(require("./config").MODELS_DIR, require("./config").DRAFT_MODEL.name);
+  if (fs.existsSync(draft)) a.push("--model-draft", draft);
   return a;
 }
 

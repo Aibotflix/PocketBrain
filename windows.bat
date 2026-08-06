@@ -231,6 +231,17 @@ if errorlevel 1 (
 
 :model_ok
 
+rem --- Speculative-decoding draft model -----------------------------------------
+set "DRAFT_FILE=Qwen3.5-0.8B-Q4_K_M.gguf"
+set "DRAFT_PATH=%ROOT%\models\%DRAFT_FILE%"
+if not exist "%DRAFT_PATH%" (
+  echo [model] downloading %DRAFT_FILE% (~0.5 GB, speeds up answers)...
+  "%NODE_CMD%" "%ROOT%\backend\download_model.js" DRAFT_MODEL
+  if errorlevel 1 (
+    echo [model] WARN: draft download failed; running without it.
+  )
+)
+
 rem --- Start backend ----------------------------------------------------------
 echo.
 echo [stickai] starting backend...

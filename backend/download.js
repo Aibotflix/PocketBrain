@@ -75,7 +75,8 @@ function download(url, dest, opts = {}) {
 }
 
 async function downloadModel(model = null) {
-  const m = model || require("./config").DEFAULT_MODEL;
+  const cfg = require("./config");
+  const m = typeof model === "string" ? cfg[model] : (model || cfg.DEFAULT_MODEL);
   const dest = path.join(MODELS_DIR, m.name);
   if (fs.existsSync(dest) && fs.statSync(dest).size > 0) {
     console.log(`[model] cached: ${m.name}`);
