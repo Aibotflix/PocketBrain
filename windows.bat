@@ -115,6 +115,8 @@ if exist "%LLAMA_BIN%" (
   goto :bin_ok
 )
 
+rem Use tar (bundled since Win10 1803) for expansion - it is 10-30x faster
+rem than PowerShell Expand-Archive on the ~300 MB GPU zips. Fall back if absent.
 if not exist "%ASSET_DIR%" mkdir "%ASSET_DIR%"
 set "DL_URL=https://github.com/ggml-org/llama.cpp/releases/download/%LLAMA_RELEASE%/%ARCH_NAME%"
 set "DL_ZIP=%TEMP%\aiusb_%ARCH_NAME%"
@@ -124,7 +126,12 @@ if errorlevel 1 (
   echo [bin] ERROR: download failed for %ARCH_NAME%
   pause & exit /b 1
 )
-powershell -NoProfile -Command "Expand-Archive -LiteralPath '%DL_ZIP%' -DestinationPath '%ASSET_DIR%' -Force"
+where tar >nul 2>nul
+if %errorlevel%==0 (
+  tar -xf "%DL_ZIP%" -C "%ASSET_DIR%"
+) else (
+  powershell -NoProfile -Command "Expand-Archive -LiteralPath '%DL_ZIP%' -DestinationPath '%ASSET_DIR%' -Force"
+)
 del "%DL_ZIP%" 2>nul
 
 if %NEED_CUDART%==1 (
@@ -136,7 +143,12 @@ if %NEED_CUDART%==1 (
   if errorlevel 1 (
     echo [bin] WARN: cudart download failed; CUDA may not run. Try a CPU build instead.
   ) else (
-    powershell -NoProfile -Command "Expand-Archive -LiteralPath '%CUDART_ZIP%' -DestinationPath '%ASSET_DIR%' -Force"
+    where tar >nul 2>nul
+    if %errorlevel%==0 (
+      tar -xf "%CUDART_ZIP%" -C "%ASSET_DIR%"
+    ) else (
+      powershell -NoProfile -Command "Expand-Archive -LiteralPath '%CUDART_ZIP%' -DestinationPath '%ASSET_DIR%' -Force"
+    )
     del "%CUDART_ZIP%" 2>nul
   )
 )
@@ -160,7 +172,12 @@ if exist "%WHISPER_BIN%" (
   if errorlevel 1 (
     echo [whisper] WARN: whisper download failed; voice-to-text will be disabled.
   ) else (
-    powershell -NoProfile -Command "Expand-Archive -LiteralPath '%TEMP%\aiusb_whisper.zip' -DestinationPath '%ROOT%\bin\whisper-win-x64' -Force"
+    where tar >nul 2>nul
+    if %errorlevel%==0 (
+      tar -xf "%TEMP%\aiusb_whisper.zip" -C "%ROOT%\bin\whisper-win-x64" 2>nul
+    ) else (
+      powershell -NoProfile -Command "Expand-Archive -LiteralPath '%TEMP%\aiusb_whisper.zip' -DestinationPath '%ROOT%\bin\whisper-win-x64' -Force"
+    )
     del "%TEMP%\aiusb_whisper.zip" 2>nul
   )
 )
