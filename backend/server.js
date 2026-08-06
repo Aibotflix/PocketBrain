@@ -199,7 +199,8 @@ async function handle(req, res) {
     return;
   }
 
-  if (req.method === "POST" && p === "/api/start") {    if (llama.isRunning()) return sendJSON(res, 200, { ok: true, already: true });
+  if (req.method === "POST" && p === "/api/start") {
+    if (llama.isRunning()) return sendJSON(res, 200, { ok: true, already: true });
     const used = [];
     try {
       await llama.start({
@@ -283,7 +284,7 @@ function handleChat(req, res) {
   req.on("data", (c) => chunks.push(c));
   req.on("end", () => {
     try {
-      var body = JSON.parse(chunks.length ? Buffer.concat(chunks).toString() : "{}");
+      const body = JSON.parse(chunks.length ? Buffer.concat(chunks).toString() : "{}");
     } catch (e) {
       return sendJSON(res, 400, { error: { message: "bad json: " + e.message } });
     }
@@ -370,8 +371,8 @@ function handleChat(req, res) {
     };
 
     if (body.web) {
-      // Run search but still forward the request even if it fails; the search
-      // helper itself degrades to Wikipedia, so a failure means offline.
+      // Run search but still forward the request even if it fails; offline
+      // or no results just means the model answers from its own knowledge.
       injectWeb().then(run).catch((e) => { console.error("web search:", e && e.message); run(null); });
     } else {
       run(null);
