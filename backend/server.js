@@ -327,7 +327,9 @@ function handleChat(req, res) {
     // Terse output directive: on slow local hardware (CPU ~5 t/s) every
     // output token is wall-clock time, and shorter answers free context
     // for web results. This is the "caveman" style trick for chat.
-    const DIRECTIVE = "Be brief. Keep all facts.";
+    // The real date is injected because local models have no clock and
+    // otherwise hallucinate it from training data.
+    const DIRECTIVE = `Be brief. Keep all facts. Today's date is ${new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}.`;
 
     // ---- Tool calling (the model proposes, the backend executes) ----------
     // Only write_file is exposed: saves generated files (HTML, code) into
