@@ -126,6 +126,10 @@ if errorlevel 1 (
   echo [bin] ERROR: download failed for %ARCH_NAME%
   pause & exit /b 1
 )
+echo !VARIANT! | findstr /i "cuda hip sycl" >nul
+if !errorlevel!==0 (
+  echo [bin] extracting - GPU builds are large, this can take several minutes...
+)
 where tar >nul 2>nul
 if %errorlevel%==0 (
   tar -xf "%DL_ZIP%" -C "%ASSET_DIR%"
