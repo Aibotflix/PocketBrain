@@ -385,11 +385,13 @@
 
     const messages = history.concat([{ role: "user", content: text }]);
 
+    const wantsTool = /(write|create|save|make|generate|build|artist|html file|page\.html|\.md|\.txt|file named|responsive|landing page|website|web page)/i.test(text);
+
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages, stream: true, temperature: 0.7, max_tokens: 1024, web: webOn, tools: true }),
+        body: JSON.stringify({ messages, stream: true, temperature: 0.7, max_tokens: 1024, web: webOn, tools: wantsTool }),
       });
       if (!res.ok) { const j = await res.json().catch(() => ({})); throw new Error(j.error?.message || `HTTP ${res.status}`); }
 
