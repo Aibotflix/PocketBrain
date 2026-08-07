@@ -79,9 +79,12 @@ if "!VARIANT!"=="" (
   )
 )
 if "!VARIANT!"=="" (
-  rem --- AMD Radeon via adapter names ---
+  rem --- AMD Radeon via adapter names. HIP/ROCm needs a discrete Radeon
+  rem (RX/PRO/VII). iGPUs ("Radeon(TM) Vega 3 Graphics", "Radeon(TM)
+  rem Graphics") have no HIP support on Windows and silently run CPU,
+  rem so they fall through to the CPU build.
   powershell -NoProfile -Command "Get-CimInstance Win32_VideoController | Select-Object -ExpandProperty Name" 2>nul > "%TEMP%\pocketbrain_gpus.txt"
-  findstr /i /c:"Radeon" "%TEMP%\pocketbrain_gpus.txt" >nul 2>nul
+  findstr /i /c:"Radeon RX" /c:"Radeon PRO" /c:"Radeon Pro" /c:"Radeon VII" "%TEMP%\pocketbrain_gpus.txt" >nul 2>nul
   if !errorlevel!==0 (
     echo [bin] AMD Radeon GPU detected -^> HIP Radeon build
     set "VARIANT=win-hip-radeon-x64"
@@ -117,6 +120,12 @@ if exist "%LLAMA_BIN%" (
 
 rem Use tar (bundled since Win10 1803) for expansion - it is 10-30x faster
 rem than PowerShell Expand-Archive on the ~300 MB GPU zips. Fall back if absent.
+rem First-run/variant switch: drop other llama variant dirs (keep whisper).
+rem A stale HIP build from an older detection (e.g. iGPU) would otherwise be
+rem preferred by the backend and silently run on CPU despite -ngl 99.
+for /d %%D in ("%BIN_OUT%\*") do (
+  echo %%D | findstr /i "whisper" >nul || rd /s /q "%%D" 2>nul
+)
 if not exist "%ASSET_DIR%" mkdir "%ASSET_DIR%"
 set "DL_URL=https://github.com/ggml-org/llama.cpp/releases/download/%LLAMA_RELEASE%/%ARCH_NAME%"
 set "DL_ZIP=%TEMP%\pocketbrain_%ARCH_NAME%"

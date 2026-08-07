@@ -277,8 +277,10 @@ deletes `bin/<variant>/` and re-runs.
 - **Slower than expected on Windows**: that's the no-mmap trade-off; loading
   the model fully into RAM instead of memory-mapping the file means no USB
   page-fault stalls, at the cost of more RAM used.
-- **Windows AMD Radeon**: the HIP build usually works driver-free; if the log
-  shows a HIP/ROCm load error, delete `bin/win-hip-radeon-x64/` and re-run to
-  fall back to CPU.
+- **Windows AMD Radeon**: discrete cards (RX / PRO / VII) use the HIP build;
+  AMD iGPUs (Vega 3, etc.) have no HIP support and silently run on CPU, so
+  the launcher now routes them to the CPU build automatically. If the log
+  shows a HIP/ROCm load error anyway, delete `bin/win-hip-radeon-x64/` and
+  re-run to fall back to CPU.
 - **Voice button missing**: whisper download failed on first run — delete
   `bin/whisper-*` and `models/ggml-base.en.bin` and re-run the launcher.
