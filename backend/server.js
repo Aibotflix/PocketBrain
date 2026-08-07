@@ -329,7 +329,7 @@ function handleChat(req, res) {
     // for web results. This is the "caveman" style trick for chat.
     // The real date is injected because local models have no clock and
     // otherwise hallucinate it from training data.
-    const DIRECTIVE = `Be brief. Keep all facts. You have no knowledge past your training cutoff: if asked about current events, news, today's date, or anything time-sensitive, say you don't have up-to-date info and suggest turning on web search (the 🌐 button). Never present training-era facts as current.`;
+    const DIRECTIVE = `Answer exactly what was asked - stay on topic, no extra themes, tangents, or advice nobody requested. Be brief. Keep all facts. You have no knowledge past your training cutoff: if asked about current events, news, today's date, or anything time-sensitive, say you don't have up-to-date info and suggest turning on web search (the 🌐 button). Never present training-era facts as current.`;
 
     // ---- Tool calling (the model proposes, the backend executes) ----------
     // Only write_file is exposed: saves generated files (HTML, code) into
