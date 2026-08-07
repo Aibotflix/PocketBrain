@@ -74,6 +74,17 @@ function pickModel(cliArg) {
 
 function get(v) { return v !== undefined ? String(v) : null; }
 
+// GPU builds (CUDA/HIP/SYCL/Vulkan/Metal) should offload to the GPU by
+// default; CPU builds get 0. 99 = all layers. Detected from the bin
+// folder name (win-hip-radeon-x64, ubuntu-vulkan-x64, macos-arm64=Metal).
+// Only used when the caller doesn't say.
+function defaultNgl(bin) {
+  const d = path.basename(path.dirname(bin)).toLowerCase();
+  if (/macos/.test(d)) return 99; // Metal (Apple Silicon) or Intel iGPU
+  if (/cuda|hip|rocm|vulkan|opencl|sycl/.test(d)) return 99;
+  return 0;
+}
+
 // Build the argv. llama-server flags: --model, --host, --port, --ctx-size,
 // --cont-batching, -ngl, --alias, --load-mode (mlock on Windows: USB FAT
 // page-faults are brutal; mlock keeps the model in RAM, no mmap).
@@ -114,6 +125,7 @@ class LlamaServer {
   async start({ model, ngl, candidates, onTry } = {}) {
     if (this.isRunning()) return;
     this.model = pickModel(model);
+    this.ngl = ngl;
     const pool = candidates && candidates.length
       ? candidates.map((b) => path.resolve(b))
       : findAllServers();
@@ -141,7 +153,7 @@ class LlamaServer {
     const logPath = path.join(LOGS_DIR, "llama-server.log");
     const log = fs.createWriteStream(logPath, { flags: "w" });
 
-    const args = buildArgs(bin, this.model, { ngl: this.ngl || 0 });
+    const args = buildArgs(bin, this.model, { ngl: this.ngl !== undefined ? this.ngl : defaultNgl(bin) });
     console.log(`[llama] ${bin}\n[llama]    ${args.join(" ")}`);
 
     this.proc = spawn(bin, args, {

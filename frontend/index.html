@@ -242,7 +242,7 @@
     startProgressLog();
     try {
       const model = modelSel.value && modelSel.value !== "no model yet" ? modelSel.value : null;
-      const r = await fetch("/api/start?ngl=0" + (model ? "&model=" + encodeURIComponent(model) : ""), { method: "POST" });
+      const r = await fetch("/api/start?model=" + encodeURIComponent(model ?? "") , { method: "POST" });
       const j = await r.json();
       if (!r.ok || !j.ok) throw new Error((j.error?.message || "start failed") + (j.error?.tried?.length ? "  tried: " + j.error.tried.join(", ") : ""));
       starting = false;
