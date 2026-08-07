@@ -127,8 +127,7 @@ Web search is **off by default** — the model answers from memory unless you
 turn it on. Click 🌐 to switch it on (per message); the toggle is remembered
 for the session. When on, the top results for your message are injected as
 context before the model answers, so replies cite real sources from today
-instead of the model's training data. (The date and time are also injected
-every message, so the model always knows today.) If the machine is offline,
+instead of the model's training data. If the machine is offline,
 search fails silently and the model answers from memory either way.
 
 ### Installing more models
