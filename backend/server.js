@@ -208,7 +208,7 @@ async function handle(req, res) {
     try {
       await llama.start({
         model: parsed.searchParams.get("model"),
-        ngl: parseInt(parsed.searchParams.get("ngl") || "0", 10),
+        ngl: parsed.searchParams.get("ngl") !== null ? parseInt(parsed.searchParams.get("ngl"), 10) : undefined,
         onTry: (bin) => {
           used.push(path.basename(path.dirname(bin)));
           console.log(`[pocketbrain] trying ${bin}`);
