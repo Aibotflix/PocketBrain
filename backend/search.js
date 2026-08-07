@@ -13,7 +13,7 @@
 
 const ENDPOINT = "https://api.firecrawl.dev/v2/search";
 
-async function search(q, limit = 5) {
+async function search(q, limit = 3) {
   const query = String(q || "").trim();
   if (!query) return { provider: "none", results: [], note: "empty query" };
   const res = await fetch(ENDPOINT, {
@@ -27,7 +27,7 @@ async function search(q, limit = 5) {
   const results = (Array.isArray(web) ? web : []).slice(0, limit).map((r) => ({
     title: r.title || r.url || "result",
     url: r.url || "",
-    snippet: String(r.description || r.snippet || "").slice(0, 400),
+    snippet: String(r.description || r.snippet || "").slice(0, 300),
   }));
   if (!results.length) throw new Error("no results");
   return { provider: "firecrawl", results };
@@ -36,7 +36,7 @@ async function search(q, limit = 5) {
 module.exports = { search };
 
 if (require.main === module) {
-  search(process.argv[2] || "who is the president of the philippines", 5).then((r) => {
+  search(process.argv[2] || "who is the president of the philippines").then((r) => {
     console.log(`provider: ${r.provider}, ${r.results.length} results`);
     for (const h of r.results) console.log(`- ${h.title}\n  ${h.snippet.slice(0, 160)}`);
   }).catch((e) => { console.error("ERR", e.message); process.exit(1); });

@@ -176,7 +176,7 @@ async function handle(req, res) {
     req.on("end", async () => {
       try {
         const body = JSON.parse(chunks.length ? Buffer.concat(chunks).toString() : "{}");
-        const r = await search(body.q || "", 5);
+        const r = await search(body.q || "", 3);
         return sendJSON(res, 200, r);
       } catch (e) {
         return sendJSON(res, 502, { error: { message: e.message } });
@@ -315,10 +315,10 @@ function handleChat(req, res) {
     const injectWeb = async () => {
       const last = [...messages].reverse().find((m) => m && m.role === "user");
       if (!last) return null;
-      const r = await search(last.content, 5).catch(() => ({ provider: "none", results: [] }));
+      const r = await search(last.content, 3).catch(() => ({ provider: "none", results: [] }));
       if (!r.results.length) return null;
       const lines = r.results.map((x, i) => {
-        const sn = (x.snippet || "").replace(/\s+/g, " ").trim().slice(0, 300);
+        const sn = (x.snippet || "").replace(/\s+/g, " ").trim().slice(0, 200);
         return `${i + 1}. ${x.title} - ${sn}\n   ${x.url}`;
       }).join("\n");
       return { role: "system", content: `Web search results (${r.provider}):\n${lines}\n\nGround your answer in these. If they don't answer the question, say so.` };
