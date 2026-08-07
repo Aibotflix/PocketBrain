@@ -106,7 +106,7 @@ function buildArgs(bin, model, opts = {}) {
 }
 
 class LlamaServer {
-  constructor() { this.proc = null; this.bin = null; this.model = null; }
+  constructor() { this.proc = null; this.bin = null; this.model = null; this.ready = false; }
 
   // Try each available llama-server binary in preference order. Prefer the
   // one with mostly GPU-free CPU argv first? No: caller supplies a preferred
@@ -157,16 +157,19 @@ class LlamaServer {
       try { log.end(); } catch (_) {}
       console.log(`[llama] exited (code=${code} sig=${sig})`);
       this.proc = null;
+      this.ready = false;
     });
     this.proc.on("error", (e) => {
       console.error(`[llama] spawn error: ${e.message}`);
     });
 
     await waitForReady(LLAMA_HOST, LLAMA_PORT, STARTUP_TIMEOUT);
+    this.ready = true;
     console.log(`[llama] ready at http://${LLAMA_HOST}:${LLAMA_PORT}`);
   }
 
   async stop() {
+    this.ready = false;
     if (!this.proc) return;
     try { this.proc.kill("SIGTERM"); } catch (_) {}
     const t = Date.now();
@@ -175,7 +178,7 @@ class LlamaServer {
     this.proc = null;
   }
 
-  isRunning() { return !!this.proc; }
+  isRunning() { return this.ready && !!this.proc; }
 }
 
 function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }

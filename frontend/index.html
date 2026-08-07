@@ -168,6 +168,7 @@
   let engineUp = false;
   let busy = false;
   let webOn = false;
+  let starting = false;
   const offline = $("offline");
 
   function setStatus(s, text) {
@@ -202,13 +203,19 @@
       const m = await fetch("/api/models").then(r => r.json()).catch(() => ({ models:[], llama:false }));
       renderModels(m.models || []);
       engineUp = !!m.llama;
-      startBtn.disabled = engineUp;
-      startBtn.textContent = engineUp ? "Running" : "Start engine";
+      if (engineUp) {
+        startBtn.disabled = true;
+        startBtn.textContent = "Running";
+      } else if (!starting) {
+        startBtn.disabled = false;
+        startBtn.textContent = "Start engine";
+      }
       sendBtn.disabled = !engineUp || busy;
       webBtn.disabled = !engineUp;
       webBtn.classList.toggle("on", webOn);
       webBtn.title = webOn ? "Web search ON — answers will be grounded" : "Search the web and ground the answer";
-      system(engineUp ? "Engine ready. Ask away." : "Backend up, engine not started. Click “Start engine”.");
+      if (engineUp) system("Engine ready. Ask away.");
+      else if (!starting) system("Backend up, engine not started. Click “Start engine”.");
       try {
         const v = await fetch("/api/voice/status").then(r => r.json()).catch(() => ({ available: false }));
         micBtn.hidden = !v.available;
@@ -229,15 +236,20 @@
 
   startBtn.addEventListener("click", async () => {
     if (engineUp) return;
+    starting = true;
     startBtn.disabled = true; startBtn.textContent = "Starting…";
     system("Loading model into llama-server (can take ~30s on first load)…");
+    startProgressPoll();
     try {
       const model = modelSel.value && modelSel.value !== "no model yet" ? modelSel.value : null;
       const r = await fetch("/api/start?ngl=0" + (model ? "&model=" + encodeURIComponent(model) : ""), { method: "POST" });
       const j = await r.json();
       if (!r.ok || !j.ok) throw new Error((j.error?.message || "start failed") + (j.error?.tried?.length ? "  tried: " + j.error.tried.join(", ") : ""));
+      starting = false;
+      stopProgressLog();
       poll();
     } catch (e) {
+      stopProgressLog();
       let detail = "";
       try {
         const r = await fetch("/api/logs").then(r2 => r2.json()).catch(() => ({}));
@@ -245,9 +257,27 @@
         if (lines.length) detail = "\n" + lines.join("\n");
       } catch (_) {}
       system("Start failed: " + e.message + detail);
+      starting = false;
       startBtn.disabled = false; startBtn.textContent = "Start engine";
     }
   });
+
+  // Live progress while the model loads: llama-server writes its startup
+  // lines to logs/llama-server.log; we tail the last one every second.
+  let progressPoll = null;
+  function startProgressLog() {
+    stopProgressLog();
+    progressPoll = setInterval(async () => {
+      try {
+        const r = await fetch("/api/logs").then(r2 => r2.json()).catch(() => ({}));
+        const lines = (r.lines || []).map(l => l.replace(/\s+/g, " ").trim()).filter(Boolean);
+        if (lines.length) system("Loading model… " + lines[lines.length - 1].slice(0, 140));
+      } catch (_) {}
+    }, 1000);
+  }
+  function stopProgressLog() {
+    if (progressPoll) { clearInterval(progressPoll); progressPoll = null; }
+  }
 
   clearBtn.addEventListener("click", () => {
     log.innerHTML = "";
