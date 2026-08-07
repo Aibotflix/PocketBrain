@@ -239,7 +239,7 @@
     starting = true;
     startBtn.disabled = true; startBtn.textContent = "Starting…";
     system("Loading model into llama-server (can take ~30s on first load)…");
-    startProgressPoll();
+    startProgressLog();
     try {
       const model = modelSel.value && modelSel.value !== "no model yet" ? modelSel.value : null;
       const r = await fetch("/api/start?ngl=0" + (model ? "&model=" + encodeURIComponent(model) : ""), { method: "POST" });
