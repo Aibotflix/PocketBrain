@@ -117,13 +117,19 @@ set "LLAMA_BIN=%ASSET_DIR%\llama-server.exe"
 rem The stick moves between machines: keep ONLY this machine's chosen variant
 rem (+ whisper). A stale build from yesterday's machine (e.g. a GPU build on a
 rem CPU-only box) would otherwise linger and get preferred by the backend.
+rem Deleting a ~300 MB GPU dir off a USB stick is slow, so say what we're doing.
+echo [bin] checking local builds for this machine...
 for /d %%D in ("%BIN_OUT%\*") do (
   set "OLD_DIR=%%~nxD"
   echo !OLD_DIR! | findstr /i "whisper" >nul
   if errorlevel 1 (
-    if /i not "!OLD_DIR!"=="!VARIANT!" rd /s /q "%%D" 2>nul
+    if /i not "!OLD_DIR!"=="!VARIANT!" (
+      echo [bin] removing stale build from another machine: !OLD_DIR!
+      rd /s /q "%%D" 2>nul
+    )
   )
 )
+echo [bin] builds ready for: !VARIANT!
 
 if exist "%LLAMA_BIN%" (
   echo [bin] cached: !VARIANT!
