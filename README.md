@@ -38,7 +38,9 @@ that goes *out*, never in about you.
 1. **Grab the files.** On this page (GitHub), click the green **Code** button,
    then **Download ZIP**. Your computer saves a file called
    `PocketBrain-main.zip`.
-2. **Plug in a USB stick** (4 GB or bigger).
+2. **Plug in a USB stick** (4 GB or bigger) — reformat it to **exFAT** first if
+   you can (right-click → Format… on Windows, Disk Utility on macOS). exFAT is
+   the one filesystem all three OSes read and write natively.
 3. **Unzip onto the USB.** Right-click the ZIP → "Extract All…" (Windows) or
    double-click it (Mac/Linux) → put the resulting `PocketBrain-main` folder on
    the USB drive.
@@ -177,7 +179,10 @@ the new one. Tips:
 
 ## Minimum USB size
 
-**Use a 4 GB stick** (formats to ~3.7 GB usable). The clean folder is ~1.9 GB
+**Use a 4 GB stick** (formats to ~3.7 GB usable). Reformat it to **exFAT** —
+the one filesystem Windows, macOS, and Linux all read and write natively. FAT32
+is fine too (every file here is under the 4 GB cap), so a stick that's already
+formatted works as-is. The clean folder is ~1.9 GB
 and first-run downloads for any machine fit with room to spare:
 
 ```
