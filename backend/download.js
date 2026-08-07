@@ -37,6 +37,9 @@ function download(url, dest, opts = {}) {
         res.resume();
         return reject(new Error(`HTTP ${res.statusCode} for ${url}`));
       }
+      // We asked for bytes=start- but got a plain 200: the server ignored
+      // Range. Start the file over instead of appending to a stale tail.
+      if (start > 0 && res.statusCode === 200) start = 0;
 
       const totalHeader = parseInt(res.headers["content-length"] || "0", 10);
       const total = totalHeader ? totalHeader + start : 0;

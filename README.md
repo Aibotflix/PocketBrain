@@ -144,8 +144,10 @@ the new one. Tips:
 - **Quality upgrade:** `node backend/download_model.js MODEL_4B` grabs
   Qwen3.5-4B Q4_K_M (~2.3 GB) — noticeably smarter, still fast on CPU, and
   the 0.8B draft accelerates it too. Delete the file to go back.
-- The draft (`Qwen3.5-0.8B-Q4_K_M.gguf`) is only a speed booster — never pick
-  it as the chat model. Deleting it disables the speedup, nothing else.
+- The draft (`Qwen3.5-0.8B-Q4_K_M.gguf`) is part of the system — keep it.
+  It's what makes answers ~1.3–1.5x faster, and the launcher re-downloads it
+  automatically if it's ever missing. Don't delete it; never pick it as the
+  chat model.
 - The STT voice model is separate: `models/ggml-base.en.bin` (don't rename).
 
 ## Turning it off
