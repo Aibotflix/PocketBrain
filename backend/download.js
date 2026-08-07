@@ -23,7 +23,7 @@ function download(url, dest, opts = {}) {
     const resume = fs.existsSync(tmp);
     const start = resume ? fs.statSync(tmp).size : 0;
 
-    const headers = Object.assign({ "User-Agent": "stickai/0.1" }, opts.headers || {});
+    const headers = Object.assign({ "User-Agent": "pocketbrain/0.1" }, opts.headers || {});
     if (start > 0) headers["Range"] = `bytes=${start}-`;
 
     const lib = url.startsWith("https") ? https : http;

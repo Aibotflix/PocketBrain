@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Stick AI · local LLM</title>
+<title>PocketBrain · local LLM</title>
 <style>
   :root {
     --bg: #0e0f13;
@@ -118,7 +118,7 @@
 
 <header>
   <span class="dot" id="statusDot" title="backend status"></span>
-  <span class="logo">Stick AI</span>
+  <span class="logo">PocketBrain</span>
   <span class="status" id="statusText">connecting…</span>
   <span class="spacer"></span>
   <select id="modelSel" title="GGUF model"></select>
@@ -133,8 +133,8 @@
 
 <div id="offline">
   <div class="card">
-    <h2>Stick AI is not running</h2>
-    <p>This chat only works while the Stick AI app is running from the USB drive.</p>
+    <h2>PocketBrain is not running</h2>
+    <p>This chat only works while the PocketBrain app is running from the USB drive.</p>
     <p>Restart it, then click Retry:</p>
     <ul>
       <li><b>Windows</b> — double-click <code>windows.bat</code></li>
@@ -167,7 +167,7 @@
 
   let engineUp = false;
   let busy = false;
-  let webOn = true;
+  let webOn = false;
   const offline = $("offline");
 
   function setStatus(s, text) {
@@ -206,8 +206,8 @@
       startBtn.textContent = engineUp ? "Running" : "Start engine";
       sendBtn.disabled = !engineUp || busy;
       webBtn.disabled = !engineUp;
-      webBtn.classList.add("on");
-      webBtn.title = "Web search ON — answers will be grounded";
+      webBtn.classList.toggle("on", webOn);
+      webBtn.title = webOn ? "Web search ON — answers will be grounded" : "Search the web and ground the answer";
       system(engineUp ? "Engine ready. Ask away." : "Backend up, engine not started. Click “Start engine”.");
       try {
         const v = await fetch("/api/voice/status").then(r => r.json()).catch(() => ({ available: false }));

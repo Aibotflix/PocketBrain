@@ -1,4 +1,4 @@
-# Build outputs / vendored / large binaries — keep this folder portable.
+# Build outputs / vendored / large binaries - keep this folder portable.
 bin/
 runtime/
 models/
@@ -10,8 +10,8 @@ node.zip
 node.tgz
 node.tar.xz
 # Local launcher scratch
-aiusb_*.zip
-aiusb_gpus.txt
+pocketbrain_*.zip
+pocketbrain_gpus.txt
 # OS junk
 .DS_Store
 Thumbs.db

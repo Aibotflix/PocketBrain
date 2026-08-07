@@ -71,9 +71,9 @@ function getLogTail() {
 
 // Open the app URL in the default browser. Best-effort: on Windows also
 // detach so the child survives; every failure is swallowed (headless SSH,
-// no GUI, etc). Skipped when AIUSB_NO_OPEN=1.
+// no GUI, etc). Skipped when POCKETBRAIN_NO_OPEN=1.
 function openBrowser(url) {
-  if (process.env.AIUSB_NO_OPEN === "1") return;
+  if (process.env.POCKETBRAIN_NO_OPEN === "1") return;
   const { exec } = require("child_process");
   const plat = process.platform;
   try {
@@ -169,7 +169,7 @@ async function handle(req, res) {
     return handleTranscribe(req, res);
   }
   // Web search -> { provider, results:[{title,url,snippet}] }. Firecrawl
-  // Keyless — real web search, no API key, no signup (see backend/search.js).
+  // Keyless -- real web search, no API key, no signup (see backend/search.js).
   if (req.method === "POST" && p === "/api/search") {
     const chunks = [];
     req.on("data", (c) => chunks.push(c));
@@ -193,7 +193,7 @@ async function handle(req, res) {
     }
   }
 
-  // In-page Stop: same as Ctrl+C — stops llama/whisper, then exits the
+  // In-page Stop: same as Ctrl+C - stops llama/whisper, then exits the
   // backend. Reply first, then exit on a short timer so the browser sees
   // "stopped" and can close itself.
   if (req.method === "POST" && p === "/api/stop") {
@@ -211,7 +211,7 @@ async function handle(req, res) {
         ngl: parseInt(parsed.searchParams.get("ngl") || "0", 10),
         onTry: (bin) => {
           used.push(path.basename(path.dirname(bin)));
-          console.log(`[stickai] trying ${bin}`);
+          console.log(`[pocketbrain] trying ${bin}`);
         },
       });
       return sendJSON(res, 200, { ok: true, tried: used, bin: path.basename(path.dirname(llama.bin)) });
@@ -258,7 +258,7 @@ function handleTranscribe(req, res) {
   const ensure = async () => {
     await whisper.start();
     const body = Buffer.concat(chunks);
-    const boundary = "----stickai" + Date.now();
+    const boundary = "----pocketbrain" + Date.now();
     const head = Buffer.from(
       `--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="voice.wav"\r\nContent-Type: audio/wav\r\n\r\n`
     );
@@ -319,7 +319,7 @@ function handleChat(req, res) {
       if (!r.results.length) return null;
       const lines = r.results.map((x, i) => {
         const sn = (x.snippet || "").replace(/\s+/g, " ").trim().slice(0, 300);
-        return `${i + 1}. ${x.title} — ${sn}\n   ${x.url}`;
+        return `${i + 1}. ${x.title} - ${sn}\n   ${x.url}`;
       }).join("\n");
       return { role: "system", content: `Web search results (${r.provider}):\n${lines}\n\nGround your answer in these. If they don't answer the question, say so.` };
     };
@@ -394,7 +394,7 @@ function handleChat(req, res) {
       // The content is echoed back into context for the model's final answer,
       // so cap it to fit the 8K window (~6K tokens); bigger files get a hint
       // to split. The file itself is always saved in full.
-      if (content.length > 24_000) return JSON.stringify({ error: "content too large — max 24000 chars per file, split into multiple files" });
+      if (content.length > 24_000) return JSON.stringify({ error: "content too large - max 24000 chars per file, split into multiple files" });
       try {
         fs.mkdirSync(OUTPUT_DIR, { recursive: true });
         fs.writeFileSync(path.join(OUTPUT_DIR, name), content, "utf8");
@@ -426,7 +426,7 @@ function handleChat(req, res) {
       return { status: 200, json: { error: "tool loop exceeded rounds" } };
     };
 
-    // llama.cpp's template allows only ONE leading system message — merge the
+    // llama.cpp's template allows only ONE leading system message - merge the
     // directive, any incoming leading system message, and the web-results
     // grounding into a single system message instead of stacking them.
     const run = async (sysMsg) => {
@@ -531,7 +531,7 @@ async function main() {
   });
   server.on("error", (err) => {
     if (err.code === "EADDRINUSE" || err.code === "EACCES") {
-      // Another Stick AI instance (or a stale one from a previous session) is
+      // Another PocketBrain instance (or a stale one from a previous session) is
       // already on this port. If it's ours, just open the browser - no error.
       // If it's some other program, say so clearly instead of dying silently.
       const probe = http.get({ host: "127.0.0.1", port, path: "/" }, (r) => {
@@ -539,30 +539,30 @@ async function main() {
         r.on("data", (c) => chunks.push(c));
         r.on("end", () => {
           const body = Buffer.concat(chunks).toString();
-          if (body.includes("Stick AI")) {
-            console.log(`[stickai] already running on port ${port} - opening browser`);
+          if (body.includes("PocketBrain")) {
+            console.log(`[pocketbrain] already running on port ${port} - opening browser`);
             openBrowser(`http://127.0.0.1:${port}`);
             process.exit(0);
           } else {
-            console.error(`[stickai] ERROR: port ${port} is in use by another program.`);
-            console.error(`[stickai] Close that program (or the stale window) and re-run.`);
+            console.error(`[pocketbrain] ERROR: port ${port} is in use by another program.`);
+            console.error(`[pocketbrain] Close that program (or the stale window) and re-run.`);
             process.exit(1);
           }
         });
       });
       probe.on("error", () => {
-        console.error(`[stickai] ERROR: port ${port} is in use. Close the stale window and re-run.`);
+        console.error(`[pocketbrain] ERROR: port ${port} is in use. Close the stale window and re-run.`);
         process.exit(1);
       });
     } else {
-      console.error("[stickai] server error:", err);
+      console.error("[pocketbrain] server error:", err);
       process.exit(1);
     }
   });
 
   server.listen(port, "127.0.0.1", () => {
-    console.log(`[stickai] backend on http://127.0.0.1:${port}`);
-    console.log(`[stickai] open http://127.0.0.1:${port} in your browser`);
+    console.log(`[pocketbrain] backend on http://127.0.0.1:${port}`);
+    console.log(`[pocketbrain] open http://127.0.0.1:${port} in your browser`);
     openBrowser(`http://127.0.0.1:${port}`);
   });
 

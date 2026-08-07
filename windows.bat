@@ -6,7 +6,7 @@ if "%ROOT:~-1%"=="\" set "ROOT=%ROOT:~0,-1%"
 cd /d "%ROOT%"
 
 echo ============================================
-echo  Stick AI  -  self-contained local LLM on a USB
+echo  PocketBrain  -  self-contained local LLM on a USB
 echo ============================================
 echo.
 
@@ -51,8 +51,8 @@ set "LLAMA_RELEASE=b10284"
 set "BIN_OUT=%ROOT%\bin"
 if not exist "%BIN_OUT%" mkdir "%BIN_OUT%"
 
-rem Allow override: set AIUSB_VARIANT=win-cpu-x64 to force CPU, etc.
-set "VARIANT=%AIUSB_VARIANT%"
+rem Allow override: set POCKETBRAIN_VARIANT=win-cpu-x64 to force CPU, etc.
+set "VARIANT=%POCKETBRAIN_VARIANT%"
 
 if "!VARIANT!"=="" (
   rem --- ARM64 CPU? (Snapdragon laptops) ---
@@ -80,23 +80,23 @@ if "!VARIANT!"=="" (
 )
 if "!VARIANT!"=="" (
   rem --- AMD Radeon via adapter names ---
-  powershell -NoProfile -Command "Get-CimInstance Win32_VideoController | Select-Object -ExpandProperty Name" 2>nul > "%TEMP%\aiusb_gpus.txt"
-  findstr /i /c:"Radeon" "%TEMP%\aiusb_gpus.txt" >nul 2>nul
+  powershell -NoProfile -Command "Get-CimInstance Win32_VideoController | Select-Object -ExpandProperty Name" 2>nul > "%TEMP%\pocketbrain_gpus.txt"
+  findstr /i /c:"Radeon" "%TEMP%\pocketbrain_gpus.txt" >nul 2>nul
   if !errorlevel!==0 (
     echo [bin] AMD Radeon GPU detected -^> HIP Radeon build
     set "VARIANT=win-hip-radeon-x64"
   )
-  del "%TEMP%\aiusb_gpus.txt" 2>nul
+  del "%TEMP%\pocketbrain_gpus.txt" 2>nul
 )
 if "!VARIANT!"=="" (
   rem --- Intel Arc / Iris Xe via adapter names ---
-  powershell -NoProfile -Command "Get-CimInstance Win32_VideoController | Select-Object -ExpandProperty Name" 2>nul > "%TEMP%\aiusb_gpus.txt"
-  findstr /i /c:"Arc" /c:"Iris" "%TEMP%\aiusb_gpus.txt" >nul 2>nul
+  powershell -NoProfile -Command "Get-CimInstance Win32_VideoController | Select-Object -ExpandProperty Name" 2>nul > "%TEMP%\pocketbrain_gpus.txt"
+  findstr /i /c:"Arc" /c:"Iris" "%TEMP%\pocketbrain_gpus.txt" >nul 2>nul
   if !errorlevel!==0 (
     echo [bin] Intel GPU detected -^> SYCL build
     set "VARIANT=win-sycl-x64"
   )
-  del "%TEMP%\aiusb_gpus.txt" 2>nul
+  del "%TEMP%\pocketbrain_gpus.txt" 2>nul
 )
 if "!VARIANT!"=="" (
   echo [bin] No GPU confirmed -^> CPU build
@@ -119,7 +119,7 @@ rem Use tar (bundled since Win10 1803) for expansion - it is 10-30x faster
 rem than PowerShell Expand-Archive on the ~300 MB GPU zips. Fall back if absent.
 if not exist "%ASSET_DIR%" mkdir "%ASSET_DIR%"
 set "DL_URL=https://github.com/ggml-org/llama.cpp/releases/download/%LLAMA_RELEASE%/%ARCH_NAME%"
-set "DL_ZIP=%TEMP%\aiusb_%ARCH_NAME%"
+set "DL_ZIP=%TEMP%\pocketbrain_%ARCH_NAME%"
 echo [bin] downloading %ARCH_NAME%
 curl -L --fail --retry 3 -o "%DL_ZIP%" "%DL_URL%"
 if errorlevel 1 (
@@ -147,7 +147,7 @@ del "%DL_ZIP%" 2>nul
 if %NEED_CUDART%==1 (
   set "CUDART_NAME=cudart-llama-bin-!VARIANT!.zip"
   set "CUDART_URL=https://github.com/ggml-org/llama.cpp/releases/download/b10284/cudart-llama-bin-!VARIANT!.zip"
-  set "CUDART_ZIP=%TEMP%\aiusb_cudart.zip"
+  set "CUDART_ZIP=%TEMP%\pocketbrain_cudart.zip"
   echo [bin] downloading !CUDART_NAME! ^(CUDA runtime^) ...
   curl -L --fail -o "%CUDART_ZIP%" "!CUDART_URL!"
   if errorlevel 1 (
@@ -181,20 +181,20 @@ if exist "%WHISPER_BIN%" (
   echo [whisper] cached: whisper-server.exe
 ) else (
   echo [whisper] downloading %WHISPER_ASSET% ^(voice-to-text^)
-  curl -L --fail --retry 3 -o "%TEMP%\aiusb_whisper.zip" "https://github.com/ggml-org/whisper.cpp/releases/download/%WHISPER_VERSION%/%WHISPER_ASSET%"
+  curl -L --fail --retry 3 -o "%TEMP%\pocketbrain_whisper.zip" "https://github.com/ggml-org/whisper.cpp/releases/download/%WHISPER_VERSION%/%WHISPER_ASSET%"
   if errorlevel 1 (
     echo [whisper] WARN: whisper download failed; voice-to-text will be disabled.
   ) else (
-    powershell -NoProfile -ExecutionPolicy Bypass -File "%ROOT%\backend\extract.ps1" -Zip "%TEMP%\aiusb_whisper.zip" -Dest "%ROOT%\bin\whisper-win-x64"
+    powershell -NoProfile -ExecutionPolicy Bypass -File "%ROOT%\backend\extract.ps1" -Zip "%TEMP%\pocketbrain_whisper.zip" -Dest "%ROOT%\bin\whisper-win-x64"
     if errorlevel 1 (
       where tar >nul 2>nul
       if %errorlevel%==0 (
-        tar -mxf "%TEMP%\aiusb_whisper.zip" -C "%ROOT%\bin\whisper-win-x64" 2>nul
+        tar -mxf "%TEMP%\pocketbrain_whisper.zip" -C "%ROOT%\bin\whisper-win-x64" 2>nul
       ) else (
-        powershell -NoProfile -Command "Expand-Archive -LiteralPath '%TEMP%\aiusb_whisper.zip' -DestinationPath '%ROOT%\bin\whisper-win-x64' -Force"
+        powershell -NoProfile -Command "Expand-Archive -LiteralPath '%TEMP%\pocketbrain_whisper.zip' -DestinationPath '%ROOT%\bin\whisper-win-x64' -Force"
       )
     )
-    del "%TEMP%\aiusb_whisper.zip" 2>nul
+    del "%TEMP%\pocketbrain_whisper.zip" 2>nul
   )
 )
 if not exist "%WHISPER_BIN%" (
@@ -207,7 +207,7 @@ set "STT_MODEL_PATH=%ROOT%\models\ggml-base.en.bin"
 if exist "%STT_MODEL_PATH%" (
   echo [stt] cached: ggml-base.en.bin
 ) else (
-  echo [stt] downloading ggml-base.en.bin ^(voice-to-text, ~141 MB, first-run^)...
+  echo [stt] downloading ggml-base.en.bin ^(voice-to-text, ~148 MB, first-run^)...
   "%NODE_CMD%" "%ROOT%\backend\download_stt_model.js"
   if errorlevel 1 (
     echo [stt] WARN: STT model download failed; voice-to-text will be disabled.
@@ -244,8 +244,8 @@ if not exist "%DRAFT_PATH%" (
 
 rem --- Start backend ----------------------------------------------------------
 echo.
-echo [stickai] starting backend...
-echo [stickai] browser will open at http://127.0.0.1:3000
+echo [pocketbrain] starting backend...
+echo [pocketbrain] browser will open at http://127.0.0.1:3000
 "%NODE_CMD%" "%ROOT%\backend\server.js"
 rem server.js blocks until Ctrl+C; on exit we come back here.
 goto :eof

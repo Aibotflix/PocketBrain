@@ -38,7 +38,7 @@ async function main() {
 
   console.log("[4] GET / (frontend) ...");
   let f = await req("GET", "/");
-  console.log("   -> status", f.status, "bytes", f.text.length, "stickai?=", f.text.includes("Stick AI"));
+  console.log("   -> status", f.status, "bytes", f.text.length, "pocketbrain?=", f.text.includes("PocketBrain"));
 
   console.log("[5] POST /api/chat stream ...");
   const payload = JSON.stringify({

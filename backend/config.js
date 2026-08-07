@@ -13,10 +13,10 @@ module.exports = {
   FRONTEND_DIR: path.join(APP_ROOT, "frontend"),
 
   // Backend listens here; llama-server on 127.0.0.1:8081, whisper-server on 8082.
-  PORT: parseInt(process.env.AIUSB_PORT, 10) || 3000,
-  LLAMA_PORT: parseInt(process.env.AIUSB_LLAMA_PORT, 10) || 8081,
+  PORT: parseInt(process.env.POCKETBRAIN_PORT, 10) || 3000,
+  LLAMA_PORT: parseInt(process.env.POCKETBRAIN_LLAMA_PORT, 10) || 8081,
   LLAMA_HOST: "127.0.0.1",
-  WHISPER_PORT: parseInt(process.env.AIUSB_WHISPER_PORT, 10) || 8082,
+  WHISPER_PORT: parseInt(process.env.POCKETBRAIN_WHISPER_PORT, 10) || 8082,
   WHISPER_HOST: "127.0.0.1",
 
   // Pin llama.cpp release. Update tag to bump; asset naming follows
@@ -26,16 +26,16 @@ module.exports = {
   // Pin whisper.cpp release (STT server). Same naming scheme, separate repo.
   WHISPER_RELEASE: "v1.9.2",
 
-  // STT model: whisper base.en (English-only, 141 MB). Swap to
+  // STT model: whisper base.en (English-only, ~148 MB). Swap to
   // ggml-small.en.bin (465 MB, better accuracy) for more headroom.
   WHISPER_MODEL: {
     name: "ggml-base.en.bin",
     repo: "ggerganov/whisper.cpp",
     url: "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.en.bin",
-    sizeHint: 141_100_000,
+    sizeHint: 148_000_000,
   },
 
-  // Default model. Current 2026 release line, small enough to fit the 16GB
+  // Default model. Current 2026 release line, small enough to fit the 4GB
   // budget with room to spare. Qwen3.5-2B Q4_K_M ~= 1.2 GB; the 4B variant
   // stays a drop-in option via models/ + the header dropdown.
   DEFAULT_MODEL: {
@@ -56,7 +56,7 @@ module.exports = {
   },
 
   // Speculative-decoding draft (~533 MB). Same family + tokenizer as the
-  // main models (rule #1 for drafts) — llama-server auto-uses it when the
+  // main models (rule #1 for drafts) - llama-server auto-uses it when the
   // file is present: ~1.3-1.5x faster answers, zero quality loss.
   DRAFT_MODEL: {
     name: "Qwen3.5-0.8B-Q4_K_M.gguf",

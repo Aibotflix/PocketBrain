@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Stick AI launch for Linux. Detects GPU (NVIDIA/AMD), downloads the matching
+# PocketBrain launch for Linux. Detects GPU (NVIDIA/AMD), downloads the matching
 # prebuilt llama.cpp binary from GitHub releases, vendors a portable Node if
 # needed, fetches a small GGUF model, then starts the backend.
 # Run: sh linux.sh
@@ -10,7 +10,7 @@ ROOT="$(cd "$(dirname "$0")" && pwd)"
 cd "$ROOT"
 
 echo "============================================"
-echo " Stick AI  -  self-contained local LLM on a USB"
+echo " PocketBrain  -  self-contained local LLM on a USB"
 echo "   Linux"
 echo "============================================"
 echo
@@ -125,7 +125,7 @@ STT_MODEL="ggml-base.en.bin"
 if [ -f "$ROOT/models/$STT_MODEL" ]; then
   echo "[stt] cached: $STT_MODEL"
 else
-  echo "[stt] downloading $STT_MODEL (~141 MB, first-run)..."
+  echo "[stt] downloading $STT_MODEL (~148 MB, first-run)..."
   "$NODE_CMD" "$ROOT/backend/download_stt_model.js" || echo "[stt] WARN: STT model download failed; voice-to-text will be disabled."
 fi
 
@@ -152,6 +152,6 @@ fi
 
 # --- Start backend ----------------------------------------------------------
 echo
-echo "[stickai] starting backend..."
-echo "[stickai] open http://127.0.0.1:3000 in your browser"
+echo "[pocketbrain] starting backend..."
+echo "[pocketbrain] open http://127.0.0.1:3000 in your browser"
 exec "$NODE_CMD" "$ROOT/backend/server.js"

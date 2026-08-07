@@ -1,5 +1,5 @@
 {
-  "name": "stickai",
+  "name": "pocketbrain",
   "version": "1.0.0",
   "description": "A self-contained local LLM chat that runs from a single folder — copy the folder onto a USB drive, plug it into any Windows/macOS/Linux machine, double click, and chat with a local model. Zero install, no admin rights, fully offline once first setup has run with an internet connection.",
   "main": "index.js",

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Stick AI launch for macOS. Vendors a portable Node if needed, downloads the
+# PocketBrain launch for macOS. Vendors a portable Node if needed, downloads the
 # matching llama.cpp prebuilt binary (Metal on Arm, CPU elsewhere), fetches a
 # small GGUF model, then starts the backend.
 # Run: sh mac.sh   (double-clickable via osascript wrapper too)
@@ -10,7 +10,7 @@ ROOT="$(cd "$(dirname "$0")" && pwd)"
 cd "$ROOT"
 
 echo "============================================"
-echo " Stick AI  -  self-contained local LLM on a USB"
+echo " PocketBrain  -  self-contained local LLM on a USB"
 echo "   macOS"
 echo "============================================"
 echo
@@ -103,6 +103,6 @@ fi
 
 # --- Start backend ----------------------------------------------------------
 echo
-echo "[stickai] starting backend..."
-echo "[stickai] open http://127.0.0.1:3000 in your browser"
+echo "[pocketbrain] starting backend..."
+echo "[pocketbrain] open http://127.0.0.1:3000 in your browser"
 exec "$NODE_CMD" "$ROOT/backend/server.js"
