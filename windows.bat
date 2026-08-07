@@ -113,6 +113,18 @@ echo !VARIANT! | findstr /i "cuda" >nul && set "NEED_CUDART=1"
 
 set "ASSET_DIR=%BIN_OUT%\!VARIANT!"
 set "LLAMA_BIN=%ASSET_DIR%\llama-server.exe"
+
+rem The stick moves between machines: keep ONLY this machine's chosen variant
+rem (+ whisper). A stale build from yesterday's machine (e.g. a GPU build on a
+rem CPU-only box) would otherwise linger and get preferred by the backend.
+for /d %%D in ("%BIN_OUT%\*") do (
+  set "OLD_DIR=%%~nxD"
+  echo !OLD_DIR! | findstr /i "whisper" >nul
+  if errorlevel 1 (
+    if /i not "!OLD_DIR!"=="!VARIANT!" rd /s /q "%%D" 2>nul
+  )
+)
+
 if exist "%LLAMA_BIN%" (
   echo [bin] cached: !VARIANT!
   goto :bin_ok
@@ -120,12 +132,6 @@ if exist "%LLAMA_BIN%" (
 
 rem Use tar (bundled since Win10 1803) for expansion - it is 10-30x faster
 rem than PowerShell Expand-Archive on the ~300 MB GPU zips. Fall back if absent.
-rem First-run/variant switch: drop other llama variant dirs (keep whisper).
-rem A stale HIP build from an older detection (e.g. iGPU) would otherwise be
-rem preferred by the backend and silently run on CPU despite -ngl 99.
-for /d %%D in ("%BIN_OUT%\*") do (
-  echo %%D | findstr /i "whisper" >nul || rd /s /q "%%D" 2>nul
-)
 if not exist "%ASSET_DIR%" mkdir "%ASSET_DIR%"
 set "DL_URL=https://github.com/ggml-org/llama.cpp/releases/download/%LLAMA_RELEASE%/%ARCH_NAME%"
 set "DL_ZIP=%TEMP%\pocketbrain_%ARCH_NAME%"

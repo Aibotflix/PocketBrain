@@ -85,6 +85,19 @@ ASSET_DIR="$BIN_OUT/$VARIANT"
 LLAMA_BIN="$ASSET_DIR/llama-server"
 URL="https://github.com/ggml-org/llama.cpp/releases/download/$LLAMA_RELEASE/$ASSET"
 
+# The stick moves between machines: keep ONLY this machine's chosen variant
+# (and whisper). A stale build from yesterday's machine would otherwise get
+# preferred by the backend (GPU variants sort first) and silently run on the
+# wrong hardware.
+for d in "$BIN_OUT"/*/; do
+  [ -d "$d" ] || continue
+  name="$(basename "$d")"
+  case "$name" in
+    "$VARIANT"|whisper*) ;;
+    *) rm -rf "$d" ;;
+  esac
+done
+
 if [ -x "$LLAMA_BIN" ]; then
   echo "[bin] cached: $VARIANT"
 else
