@@ -66,7 +66,9 @@ function download(url, dest, opts = {}) {
             return reject(new Error(`Size mismatch: got ${received}, expected ${total}`));
           }
           fs.renameSync(tmp, dest);
-          if (total) process.stdout.write("\n");
+          // Always land on a final 100% line instead of the last ~2% tick
+          // being swallowed by the progress-throttle check above.
+          if (total) process.stdout.write(`\r  ${path.basename(dest)}  100% (${(total / 1e6).toFixed(0)}/${(total / 1e6).toFixed(0)} MB)\n`);
           resolve(dest);
         });
       });
