@@ -315,10 +315,10 @@ function handleChat(req, res) {
     const injectWeb = async () => {
       const last = [...messages].reverse().find((m) => m && m.role === "user");
       if (!last) return null;
-      const r = await search(last.content, 3).catch(() => ({ provider: "none", results: [] }));
+      const r = await search(last.content, 2).catch(() => ({ provider: "none", results: [] }));
       if (!r.results.length) return null;
       const lines = r.results.map((x, i) => {
-        const sn = (x.snippet || "").replace(/\s+/g, " ").trim().slice(0, 200);
+        const sn = (x.snippet || "").replace(/\s+/g, " ").trim().slice(0, 140);
         return `${i + 1}. ${x.title} - ${sn}\n   ${x.url}`;
       }).join("\n");
       return { role: "system", content: `Web search results (${r.provider}):\n${lines}\n\nGround your answer in these. If they don't answer the question, say so.` };
