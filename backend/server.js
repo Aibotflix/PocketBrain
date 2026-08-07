@@ -427,13 +427,23 @@ function handleChat(req, res) {
     };
 
     // llama.cpp's template allows only ONE leading system message - merge the
-    // directive, any incoming leading system message, and the web-results
-    // grounding into a single system message instead of stacking them.
+    // directive and any incoming leading system message into a single system
+    // message. Web results are appended to the END (inside the last user
+    // message) instead: llama-server caches the prompt prefix across turns
+    // (--cache-prompt, on by default), so a fixed directive + history prefix
+    // means follow-up turns only prefill the new tokens. If web results were
+    // in the leading system message, every new search changed the prefix and
+    // forced a full re-prefill (minutes on slow CPUs).
     const run = async (sysMsg) => {
       const base = messages[0] && messages[0].role === "system" ? messages[0] : null;
       const rest = base ? messages.slice(1) : messages;
-      const parts = [DIRECTIVE, base && base.content, sysMsg && sysMsg.content].filter(Boolean);
-      const effective = fitMessages([{ role: "system", content: parts.join("\n\n") }, ...rest]);
+      const parts = [DIRECTIVE, base && base.content].filter(Boolean);
+      let effective = fitMessages([{ role: "system", content: parts.join("\n\n") }, ...rest]);
+      if (sysMsg && sysMsg.content) {
+        const i = effective.length - 1;
+        const last = effective[i];
+        effective[i] = { ...last, content: `${last.content}\n\n${sysMsg.content}` };
+      }
 
       // Tool mode: run the (non-streaming) tool loop, then relay the final
       // answer as SSE so the frontend render path stays identical.
