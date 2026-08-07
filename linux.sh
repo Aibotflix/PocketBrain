@@ -130,7 +130,7 @@ else
 fi
 
 # --- Model ------------------------------------------------------------------
-MODEL_FILE="Qwen3.5-2B-Q4_K_M.gguf"
+MODEL_FILE="Qwen3.5-2B-UD-Q4_K_XL.gguf"
 mkdir -p "$ROOT/models"
 if [ -f "$ROOT/models/$MODEL_FILE" ]; then
   echo "[model] cached: $MODEL_FILE"

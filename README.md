@@ -95,7 +95,7 @@ uploaded, no account is needed, no telemetry is sent.
 3. The launcher downloads into the folder, *only what this machine lacks*:
    - a portable Node.js runtime into `runtime/` (skipped if `node` is on PATH),
    - the matching prebuilt `llama-server` for your OS/GPU into `bin/`,
-   - the chat model `Qwen3.5-2B-Q4_K_M.gguf` (~1.2 GB) into `models/`,
+   - the chat model `Qwen3.5-2B-UD-Q4_K_XL.gguf` (~1.3 GB) into `models/`,
    - the speculative-decoding draft `Qwen3.5-0.8B-Q4_K_M.gguf` (~0.5 GB) into
      `models/` — reused automatically for faster answers on every later run,
    - the whisper STT server + voice model on Windows/Linux (~148 MB).
@@ -182,11 +182,11 @@ the new one. Tips:
 **Use a 4 GB stick** (formats to ~3.7 GB usable). Reformat it to **exFAT** —
 the one filesystem Windows, macOS, and Linux all read and write natively. FAT32
 is fine too (every file here is under the 4 GB cap), so a stick that's already
-formatted works as-is. The clean folder is ~1.9 GB
+formatted works as-is. The clean folder is ~2.0 GB
 and first-run downloads for any machine fit with room to spare:
 
 ```
-models/Qwen3.5-2B-Q4_K_M.gguf    ~1.2 GB   chat model
+models/Qwen3.5-2B-UD-Q4_K_XL.gguf  ~1.3 GB   chat model
 models/Qwen3.5-0.8B-Q4_K_M.gguf  ~0.5 GB   speedup draft (speculative decoding)
 models/ggml-base.en.bin          ~148 MB   voice model
 backend + frontend + launchers   ~60 KB

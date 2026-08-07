@@ -215,7 +215,7 @@ if exist "%STT_MODEL_PATH%" (
 )
 
 rem --- Model detection/vendoring -----------------------------------------------
-set "MODEL_FILE=Qwen3.5-2B-Q4_K_M.gguf"
+set "MODEL_FILE=Qwen3.5-2B-UD-Q4_K_XL.gguf"
 set "MODEL_PATH=%ROOT%\models\%MODEL_FILE%"
 if not exist "%ROOT%\models" mkdir "%ROOT%\models"
 if exist "%MODEL_PATH%" (

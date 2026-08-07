@@ -36,13 +36,14 @@ module.exports = {
   },
 
   // Default model. Current 2026 release line, small enough to fit the 4GB
-  // budget with room to spare. Qwen3.5-2B Q4_K_M ~= 1.2 GB; the 4B variant
-  // stays a drop-in option via models/ + the header dropdown.
+  // budget with room to spare. UD (Uniform Drop) + XL quants beat plain
+  // Q4_K_M at nearly the same size; the 4B variant stays a drop-in option
+  // via models/ + the header dropdown.
   DEFAULT_MODEL: {
-    name: "Qwen3.5-2B-Q4_K_M.gguf",
+    name: "Qwen3.5-2B-UD-Q4_K_XL.gguf",
     repo: "unsloth/Qwen3.5-2B-GGUF",
-    url: "https://huggingface.co/unsloth/Qwen3.5-2B-GGUF/resolve/main/Qwen3.5-2B-Q4_K_M.gguf",
-    sizeHint: 1_221_000_000,
+    url: "https://huggingface.co/unsloth/Qwen3.5-2B-GGUF/resolve/main/Qwen3.5-2B-UD-Q4_K_XL.gguf",
+    sizeHint: 1_340_000_000,
   },
 
   // Quality upgrade: Qwen3.5-4B Q4_K_M (~2.3 GB). Beats Phi-4-mini on most
