@@ -13,8 +13,8 @@ that goes *out*, never in about you.
 |---|---|
 | 🆓 **Free forever** | $0, full stop — no signup, no API key, no subscription, no metering, no "pro tier" |
 | 🎙️ **Just talk** | Speak like you'd talk to a friend — PocketBrain types it, instantly. Audio never leaves the machine |
-| ⚡ **Fast** | ~1.3–1.5x faster with speculative decoding (Qwen3.5-2B + 0.8B draft) |
-| 📦 **Pocket-sized** | ~2 GB total, fits on a consumer 4 GB USB stick — carry it in your pocket, run it anywhere |
+| ⚡ **Fast** | ~1.3–1.5x faster with speculative decoding (Qwen3.5-4B + 0.8B draft) |
+| 📦 **Pocket-sized** | ~2.9 GB total, fits on a consumer 4 GB USB stick — carry it in your pocket, run it anywhere |
 | 📋 **Copy in one tap** | Every AI answer has a copy button — grab it, paste it, done |
 | 🌐 **Grounded** | Optional web search (keyless Firecrawl, no API key) — answers from today, not training data |
 
@@ -70,9 +70,9 @@ uploaded, no account is needed, no telemetry is sent.
 
 ## What it does
 
-- **Chat with a real LLM, fully offline** — a Qwen3.5-2B model runs locally via
+- **Chat with a real LLM, fully offline** — a Qwen3.5-4B model runs locally via
   llama.cpp, accelerated by speculative decoding: a small Qwen3.5-0.8B "draft"
-  model pre-guesses tokens and the 2B accepts/rejects them in batches, giving
+  model pre-guesses tokens and the 4B accepts/rejects them in batches, giving
   ~1.3–1.5x faster answers with identical quality. No cloud, no API key, no
   signup, no telemetry.
 - **Voice input** — speak instead of typing; a local whisper.cpp server turns
@@ -95,7 +95,7 @@ uploaded, no account is needed, no telemetry is sent.
 3. The launcher downloads into the folder, *only what this machine lacks*:
    - a portable Node.js runtime into `runtime/` (skipped if `node` is on PATH),
    - the matching prebuilt `llama-server` for your OS/GPU into `bin/`,
-   - the chat model `Qwen3.5-2B-UD-Q4_K_XL.gguf` (~1.3 GB) into `models/`,
+   - the chat model `Qwen3.5-4B-Q4_K_M.gguf` (~2.3 GB) into `models/`,
    - the speculative-decoding draft `Qwen3.5-0.8B-Q4_K_M.gguf` (~0.5 GB) into
      `models/` — reused automatically for faster answers on every later run,
    - the whisper STT server + voice model on Windows/Linux (~148 MB).
@@ -139,9 +139,6 @@ the new one. Tips:
   current formats via the pinned binary.
 - Bigger isn't better on a USB: 2B–8B Q4 quantizations fit the 4 GB stick and
   run on CPU. Larger models (13B+) need a discrete GPU.
-- **Quality upgrade:** `node backend/download_model.js MODEL_4B` grabs
-  Qwen3.5-4B Q4_K_M (~2.3 GB) — noticeably smarter, still fast on CPU, and
-  the 0.8B draft accelerates it too. Delete the file to go back.
 - The draft (`Qwen3.5-0.8B-Q4_K_M.gguf`) is part of the system — keep it.
   It's what makes answers ~1.3–1.5x faster, and the launcher re-downloads it
   automatically if it's ever missing. Don't delete it; never pick it as the
@@ -182,11 +179,11 @@ the new one. Tips:
 **Use a 4 GB stick** (formats to ~3.7 GB usable). Reformat it to **exFAT** —
 the one filesystem Windows, macOS, and Linux all read and write natively. FAT32
 is fine too (every file here is under the 4 GB cap), so a stick that's already
-formatted works as-is. The clean folder is ~2.0 GB
-and first-run downloads for any machine fit with room to spare:
+formatted works as-is. The clean folder is ~2.9 GB
+and first-run downloads for any machine still fit a 4 GB stick:
 
 ```
-models/Qwen3.5-2B-UD-Q4_K_XL.gguf  ~1.3 GB   chat model
+models/Qwen3.5-4B-Q4_K_M.gguf      ~2.3 GB   chat model
 models/Qwen3.5-0.8B-Q4_K_M.gguf  ~0.5 GB   speedup draft (speculative decoding)
 models/ggml-base.en.bin          ~148 MB   voice model
 backend + frontend + launchers   ~60 KB
@@ -225,8 +222,8 @@ models/                # the GGUF model + ggml-base.en.bin
 
 Do **not** copy `bin/` or `runtime/` — they're per-machine caches. The
 recipient's first run auto-detects their OS/GPU and downloads the matching
-binary. Copying a `bin/` built for a different GPU wastes ~1.3 GB and gets
-replaced by re-detection anyway.
+binary. Copying a `bin/` built for a different GPU wastes hundreds of MB and
+gets replaced by re-detection anyway.
 
 ---
 
@@ -234,7 +231,7 @@ replaced by re-detection anyway.
 
 - USB 4 GB or larger (see above).
 - An x64 or ARM64 CPU with AVX2 (x64) — real GPU builds want a discrete GPU.
-- ~2.5 GB free space locally for models + binaries.
+- ~3.5 GB free space locally for models + binaries.
 - Internet only on the very first run of a given machine.
 - No admin rights, no installers, no Node.js needed (vendored automatically).
 

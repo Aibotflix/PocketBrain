@@ -1,7 +1,7 @@
 // CLI: node backend/download_model.js [url] [name]
 // Downloads the default model (or an override) into models/.
-// Config keys (DEFAULT_MODEL, MODEL_4B, DRAFT_MODEL) are accepted as a bare
-// first arg, e.g.: node backend/download_model.js DRAFT_MODEL
+// Config keys (DEFAULT_MODEL, DRAFT_MODEL, WHISPER_MODEL) are accepted as a
+// bare first arg, e.g.: node backend/download_model.js DRAFT_MODEL
 const { downloadModel } = require("./download");
 const cfg = require("./config");
 

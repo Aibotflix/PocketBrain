@@ -35,21 +35,10 @@ module.exports = {
     sizeHint: 148_000_000,
   },
 
-  // Default model. Current 2026 release line, small enough to fit the 4GB
-  // budget with room to spare. UD (Uniform Drop) + XL quants beat plain
-  // Q4_K_M at nearly the same size; the 4B variant stays a drop-in option
-  // via models/ + the header dropdown.
+  // Default model. Current 2026 release line: 4B is the default - a real
+  // step up in answer accuracy (translations, facts) over the 2B it replaced.
+  // Q4_K_M keeps it small enough for a 4GB stick alongside draft + voice.
   DEFAULT_MODEL: {
-    name: "Qwen3.5-2B-UD-Q4_K_XL.gguf",
-    repo: "unsloth/Qwen3.5-2B-GGUF",
-    url: "https://huggingface.co/unsloth/Qwen3.5-2B-GGUF/resolve/main/Qwen3.5-2B-UD-Q4_K_XL.gguf",
-    sizeHint: 1_340_000_000,
-  },
-
-  // Quality upgrade: Qwen3.5-4B Q4_K_M (~2.3 GB). Beats Phi-4-mini on most
-  // benchmarks; same family/tokenizer as the default so the draft below
-  // works for it too. Not part of the default install.
-  MODEL_4B: {
     name: "Qwen3.5-4B-Q4_K_M.gguf",
     repo: "unsloth/Qwen3.5-4B-GGUF",
     url: "https://huggingface.co/unsloth/Qwen3.5-4B-GGUF/resolve/main/Qwen3.5-4B-Q4_K_M.gguf",

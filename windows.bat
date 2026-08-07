@@ -236,14 +236,14 @@ if exist "%STT_MODEL_PATH%" (
 )
 
 rem --- Model detection/vendoring -----------------------------------------------
-set "MODEL_FILE=Qwen3.5-2B-UD-Q4_K_XL.gguf"
+set "MODEL_FILE=Qwen3.5-4B-Q4_K_M.gguf"
 set "MODEL_PATH=%ROOT%\models\%MODEL_FILE%"
 if not exist "%ROOT%\models" mkdir "%ROOT%\models"
 if exist "%MODEL_PATH%" (
   echo [model] cached: %MODEL_FILE%
   goto :model_ok
 )
-echo [model] downloading %MODEL_FILE% (~1.3 GB, first-run only)...
+echo [model] downloading %MODEL_FILE% (~2.3 GB, first-run only)...
 "%NODE_CMD%" "%ROOT%\backend\download_model.js"
 if errorlevel 1 (
   echo [model] ERROR: model download failed.

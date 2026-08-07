@@ -93,12 +93,12 @@ fi
 echo "[bin] ready: $VARIANT"
 
 # --- Model ------------------------------------------------------------------
-MODEL_FILE="Qwen3.5-2B-UD-Q4_K_XL.gguf"
+MODEL_FILE="Qwen3.5-4B-Q4_K_M.gguf"
 mkdir -p "$ROOT/models"
 if [ -f "$ROOT/models/$MODEL_FILE" ]; then
   echo "[model] cached: $MODEL_FILE"
 else
-  echo "[model] downloading $MODEL_FILE (~1.3 GB, first-run only)..."
+  echo "[model] downloading $MODEL_FILE (~2.3 GB, first-run only)..."
   "$NODE_CMD" "$ROOT/backend/download_model.js"
 fi
 
