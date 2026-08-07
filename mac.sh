@@ -98,7 +98,7 @@ mkdir -p "$ROOT/models"
 if [ -f "$ROOT/models/$MODEL_FILE" ]; then
   echo "[model] cached: $MODEL_FILE"
 else
-  echo "[model] downloading $MODEL_FILE (~2.3 GB, first-run only)..."
+  echo "[model] downloading $MODEL_FILE (~2.7 GB, first-run only)..."
   "$NODE_CMD" "$ROOT/backend/download_model.js"
 fi
 

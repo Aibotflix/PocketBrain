@@ -42,7 +42,7 @@ module.exports = {
     name: "Qwen3.5-4B-Q4_K_M.gguf",
     repo: "unsloth/Qwen3.5-4B-GGUF",
     url: "https://huggingface.co/unsloth/Qwen3.5-4B-GGUF/resolve/main/Qwen3.5-4B-Q4_K_M.gguf",
-    sizeHint: 2_300_000_000,
+    sizeHint: 2_740_000_000,
   },
 
   // Speculative-decoding draft (~533 MB). Same family + tokenizer as the

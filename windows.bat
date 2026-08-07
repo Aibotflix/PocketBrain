@@ -243,7 +243,7 @@ if exist "%MODEL_PATH%" (
   echo [model] cached: %MODEL_FILE%
   goto :model_ok
 )
-echo [model] downloading %MODEL_FILE% (~2.3 GB, first-run only)...
+echo [model] downloading %MODEL_FILE% (~2.7 GB, first-run only)...
 "%NODE_CMD%" "%ROOT%\backend\download_model.js"
 if errorlevel 1 (
   echo [model] ERROR: model download failed.
