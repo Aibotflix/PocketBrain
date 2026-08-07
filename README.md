@@ -258,16 +258,16 @@ Only one machine has run this so far:
 
 Everything else is **code-reviewed against the release asset lists, not
 executed**: macOS and Linux launchers (`mac.sh`, `linux.sh`), ARM64, and all
-GPU builds (NVIDIA CUDA, AMD Radeon/HIP, Intel SYCL, Vulkan, Metal). If you
-do, expect the first-run setup to be the risk point — a failure there just
-deletes `bin/<variant>/` and re-runs.
+GPU builds (NVIDIA CUDA, AMD Radeon/HIP, Intel SYCL, Vulkan, Metal). First-run
+downloads are the risk point — if anything goes wrong, just close the window
+and run it again.
 
 ## Troubleshooting
 
 - **No response / engine won't start**: check `logs/llama-server.log`. A
-  non-zero code usually means the GPU build doesn't match your drivers —
-  delete `bin/<variant>/` and re-run to re-detect, or force the CPU build with
-  `POCKETBRAIN_VARIANT=win-cpu-x64` (Windows only) before launching.
+  non-zero code usually means the GPU build doesn't match your drivers — just
+  close the window and re-run; the launcher re-checks your hardware on every
+  start and picks the matching build.
 - **Model answers with "thinking…" noise**: PocketBrain starts llama-server with
   `--reasoning off` so Qwen3.5 answers directly. If you re-enable reasoning,
   reasoning tokens stream via `delta.reasoning_content` (dimmed in the UI)
@@ -278,9 +278,7 @@ deletes `bin/<variant>/` and re-runs.
   the model fully into RAM instead of memory-mapping the file means no USB
   page-fault stalls, at the cost of more RAM used.
 - **Windows AMD Radeon**: discrete cards (RX / PRO / VII) use the HIP build;
-  AMD iGPUs (Vega 3, etc.) have no HIP support and silently run on CPU, so
-  the launcher now routes them to the CPU build automatically. If the log
-  shows a HIP/ROCm load error anyway, delete `bin/win-hip-radeon-x64/` and
-  re-run to fall back to CPU.
-- **Voice button missing**: whisper download failed on first run — delete
-  `bin/whisper-*` and `models/ggml-base.en.bin` and re-run the launcher.
+  AMD iGPUs (Vega 3, etc.) have no HIP support on Windows, so the launcher
+  routes them to the CPU build automatically.
+- **Voice button missing**: the voice download failed on first run — just
+  re-run the launcher; it retries anything that's missing.
