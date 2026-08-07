@@ -123,12 +123,11 @@ whisper model from first run; if that download failed, the button stays hidden.
 macOS voice is not supported (whisper.cpp publishes no macOS prebuilt binary).
 
 ### Web search (grounded answers)
-Web search is **off by default** — the model answers from memory unless you
-turn it on. Click 🌐 to switch it on (per message); the toggle is remembered
-for the session. When on, the top results for your message are injected as
-context before the model answers, so replies cite real sources from today
-instead of the model's training data. If the machine is offline,
-search fails silently and the model answers from memory either way.
+Web search is **on by default** — every message is checked against the web,
+so answers are grounded in real sources instead of the model guessing from
+training data. Click 🌐 to switch it off (per message); the toggle is
+remembered for the session. If the machine is offline, search fails silently
+and the model answers from memory either way.
 
 ### Installing more models
 Drop any `.gguf` file into `models/`, refresh the page, and pick it from the
