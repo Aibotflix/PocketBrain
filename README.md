@@ -9,6 +9,13 @@ never leave that machine, and there is no telemetry to leave it with. The only
 thing that ever touches the network is an optional web-search toggle, and even
 that goes *out*, never in about you.
 
+> **This is not ChatGPT, Claude, or Gemini.** PocketBrain runs the model on
+> *your* machine, so answers come as fast as your hardware allows — seconds on
+> a gaming GPU, a minute or more per reply on a laptop or PC without one.
+> There's no datacenter behind the scenes; the speed *is* your computer. Every
+> string typed is generated locally, right beside you — that's the trade-off
+> for $0, no account, and nothing leaving your machine.
+
 | | |
 |---|---|
 | 🆓 **Free forever** | $0, full stop — no signup, no API key, no subscription, no metering, no "pro tier" |
