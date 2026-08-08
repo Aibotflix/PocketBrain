@@ -131,8 +131,18 @@ is remembered for the session. If the machine is offline, search fails
 silently and the model answers from memory either way.
 
 Search results are fetched via keyless Firecrawl (no API keys, no signup).
-Recent queries are cached in memory only (5 minutes, ~200 entries) — never
-written to disk, never stored, gone when the app closes.
+Each message pulls up to **8 results — 4 web + 4 news** — so general
+questions get normal pages and current-events questions get dated news
+headlines ("[Aug 8] …"). Snippets are clipped to 240 characters before
+reaching the model, and every result carries its source URL. Recent queries
+are cached in memory only (5 minutes, ~200 entries) — never written to disk,
+never stored, gone when the app closes.
+
+Firecrawl's free tier is 1,000 credits/month (search costs 2 credits per 10
+results), shared monthly and renewed automatically — no signup. If you want
+your own quota on top, sign up at firecrawl.dev and set the free
+`FIRECRAWL_API_KEY` environment variable before launching: the app uses it
+automatically.
 
 ### Installing more models
 Drop any `.gguf` file into `models/`, refresh the page, and pick it from the

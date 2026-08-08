@@ -41,18 +41,23 @@ function cacheSet(key, value) {
 }
 
 async function searchFirecrawl(q, limit) {
+  const apiKey = process.env.FIRECRAWL_API_KEY || "";
+  const headers = { "Content-Type": "application/json" };
+  if (apiKey) headers.Authorization = `Bearer ${apiKey}`;
+  // web + news sources: web covers any question, news returns dated
+  // headline+snippet for current-events queries instead of generic pages.
   const res = await withTimeout(fetch(FIRECRAWL, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ query: q, limit }),
+    headers,
+    body: JSON.stringify({ query: q, limit: Math.ceil(limit / 2), sources: [{ type: "web" }, { type: "news" }] }),
   }), TIMEOUT_MS);
   if (!res.ok) throw new Error(`Firecrawl HTTP ${res.status}`);
   const j = await res.json();
-  const web = j.data && (j.data.web || j.data);
-  return (Array.isArray(web) ? web : []).slice(0, limit).map((r) => ({
+  const data = j.data || {};
+  return [...(data.web || []), ...(data.news || [])].slice(0, limit).map((r) => ({
     title: r.title || r.url || "result",
     url: r.url || "",
-    snippet: String(r.description || r.snippet || "").slice(0, 300),
+    snippet: String((r.date ? `[${r.date}] ` : "") + (r.description || r.snippet || "")).slice(0, 300),
   }));
 }
 
