@@ -393,9 +393,10 @@ function handleChat(req, res) {
       if (!name || name.includes("\\")) return JSON.stringify({ error: "filename must be a plain name like page.html" });
       const content = String(args.content || "");
       // The content is echoed back into context for the model's final answer,
-      // so cap it to fit the 8K window (~6K tokens); bigger files get a hint
-      // to split. The file itself is always saved in full.
-      if (content.length > 24_000) return JSON.stringify({ error: "content too large - max 24000 chars per file, split into multiple files" });
+      // so cap it to fit the tool-round token budget (max_tokens 4096, ~12K
+      // chars of JSON-escaped text); bigger files get a hint to split - a
+      // truncated tool call 500s in llama.cpp (known issue #25510).
+      if (content.length > 12_000) return JSON.stringify({ error: "content too large - max 12000 chars per file, split into multiple files" });
       try {
         fs.mkdirSync(OUTPUT_DIR, { recursive: true });
         fs.writeFileSync(path.join(OUTPUT_DIR, name), content, "utf8");
@@ -410,7 +411,17 @@ function handleChat(req, res) {
       for (let i = 0; i < MAX_TOOL_ROUNDS; i++) {
         const r = await llamaChat(effective, TOOLS);
         const msg = r.json && r.json.choices && r.json.choices[0] && r.json.choices[0].message;
-        if (!msg) return r;
+        if (!msg) {
+          // Model botched the tool-call JSON (e.g. hit max_tokens mid-call,
+          // llama.cpp returns 500 "Failed to parse tool call arguments").
+          // Retry once without tools so the user still gets an answer.
+          if (String((r.json && r.json.error && r.json.error.message) || "").includes("Failed to parse tool call arguments")) {
+            const retry = await llamaChat(effective, null);
+            const retryMsg = retry.json && retry.json.choices && retry.json.choices[0] && retry.json.choices[0].message;
+            if (retryMsg) return retry;
+          }
+          return r;
+        }
         const calls = Array.isArray(msg.tool_calls) ? msg.tool_calls : [];
         if (!calls.length) return r;
         effective.push({ role: "assistant", content: msg.content || "", tool_calls: calls });

@@ -144,6 +144,17 @@ your own quota on top, sign up at firecrawl.dev and set the free
 `FIRECRAWL_API_KEY` environment variable before launching: the app uses it
 automatically.
 
+### Creating files (tool calls)
+
+Ask for a deliverable — "make me a salon website", "write a Python script" —
+and PocketBrain builds it and saves it as a real file. When the model decides
+a file is the right answer, it proposes a `write_file` *tool call*; the
+backend executes it and replies with a link you can open or download. Files
+land in the app's `outputs/` folder only — nothing outside the app folder is
+ever touched, and `write_file` is the only tool exposed (small local models
+stay coherent with a single tool). Writes are capped at 12,000 characters —
+if you need more, ask the model to split it into several files.
+
 ### Installing more models
 Drop any `.gguf` file into `models/`, refresh the page, and pick it from the
 dropdown in the header (it scans `models/` for `*.gguf` on load; the draft
