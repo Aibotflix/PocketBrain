@@ -221,7 +221,7 @@ download is Windows+NVIDIA at ~612 MB; everything else is under 310 MB.
 Copy these — the machine-independent pieces:
 
 ```
-backend/   frontend/   test/
+backend/   frontend/
 windows.bat  start.sh
 models/                # the GGUF model + ggml-base.en.bin
 ```
