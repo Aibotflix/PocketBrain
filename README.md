@@ -194,6 +194,13 @@ the new one. Tips:
   exposed to your network): the Node backend on port 3000 (serves the page),
   `llama-server` on 8081 (the model), and whisper-server on 8082 (voice, only
   when used).
+- The backend rejects requests carrying a foreign web `Origin` (any POST that
+  isn't from the app's own page), so a random website open in another tab
+  can't drive, stop, or overload the local servers.
+- Web search results reach the model as an explicitly labeled block of
+  **UNTRUSTED WEB DATA** (raw evidence, never instructions) — search content
+  can't hijack the conversation. The `write_file` tool only writes
+  plain basename filenames into `outputs/`, with a 12,000-character cap.
 - `server.js` spawns llama-server, waits for `/health`, then serves the
   frontend and proxies chat (`/api/chat` → SSE tokens).
 - Everything is relative to the app folder; nothing is written outside it.
