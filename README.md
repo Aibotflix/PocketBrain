@@ -13,7 +13,7 @@ that goes *out*, never in about you.
 |---|---|
 | 🆓 **Free forever** | $0, full stop — no signup, no API key, no subscription, no metering, no "pro tier" |
 | 🎙️ **Just talk** | Speak like you'd talk to a friend — PocketBrain types it, instantly. Audio never leaves the machine |
-| ⚡ **Fast** | ~1.3–1.5x faster with speculative decoding (Qwen3.5-4B + 0.8B draft) |
+| ⚡ **Fast** | Speculative decoding (Qwen3.5-4B + 0.8B draft) — biggest gains on discrete GPUs |
 | 📦 **Pocket-sized** | ~3.4 GB total, fits on a consumer 4 GB USB stick — carry it in your pocket, run it anywhere |
 | 📋 **Copy in one tap** | Every AI answer has a copy button — grab it, paste it, done |
 | 🌐 **Grounded** | Optional web search (keyless — no API key) — answers from today, not training data |
@@ -72,9 +72,9 @@ uploaded, no account is needed, no telemetry is sent.
 
 - **Chat with a real LLM, fully offline** — a Qwen3.5-4B model runs locally via
   llama.cpp, accelerated by speculative decoding: a small Qwen3.5-0.8B "draft"
-  model pre-guesses tokens and the 4B accepts/rejects them in batches, giving
-  ~1.3–1.5x faster answers with identical quality. No cloud, no API key, no
-  signup, no telemetry.
+  model pre-guesses tokens and the 4B accepts/rejects them in batches — same
+  output quality, with the largest speedups on discrete GPUs. No cloud, no API
+  key, no signup, no telemetry.
 - **Voice input** — speak instead of typing; a local whisper.cpp server turns
   your voice into text. Audio never leaves the machine.
 - **Web search (opt-in, per message)** — toggle 🌐 and answers get grounded in
@@ -84,9 +84,10 @@ uploaded, no account is needed, no telemetry is sent.
   your clipboard as plain text.
 - **Works on any OS/arch without choosing anything** — the launcher detects
   Windows/macOS/Linux and x64/ARM64 and picks the fitting prebuilt binary:
-  Windows: CUDA by driver version, AMD Radeon (HIP), Intel (SYCL), or CPU.
-  macOS: Metal on Apple Silicon, CPU on Intel. Linux: CPU by default, or
-  Vulkan if `glxinfo` shows a GPU. Nothing compiles, nothing installs.
+  Windows: NVIDIA → CUDA (by driver version), AMD Radeon → HIP, Intel
+  Arc/Iris → SYCL, any other GPU (incl. AMD iGPUs) → Vulkan, none → CPU.
+  macOS: Metal on Apple Silicon, CPU on Intel. Linux: any GPU
+  (`lspci`) → Vulkan, otherwise CPU. Nothing compiles, nothing installs.
 
 ## First run (needs internet once, ~5–15 min)
 
@@ -140,12 +141,12 @@ the new one. Tips:
 
 - Any GGUF works (LLaMA, Mistral, Gemma, Qwen…), and llama.cpp supports all
   current formats via the pinned binary.
-- Bigger isn't better on a USB: 2B–8B Q4 quantizations fit the 4 GB stick and
-  run on CPU. Larger models (13B+) need a discrete GPU.
+- Bigger isn't better on a USB: 2B–5B Q4 quantizations fit the 4 GB stick and
+  run on CPU. Larger models (8B+) need a bigger stick or a discrete GPU.
 - The draft (`Qwen3.5-0.8B-Q4_K_M.gguf`) is part of the system — keep it.
-  It's what makes answers ~1.3–1.5x faster, and the launcher re-downloads it
-  automatically if it's ever missing. Don't delete it; never pick it as the
-  chat model.
+  It enables speculative decoding (biggest speedups on discrete GPUs), and the
+  launcher re-downloads it automatically if it's ever missing. Don't delete
+  it; never pick it as the chat model.
 - The STT voice model is separate: `models/ggml-base.en.bin` (don't rename).
 
 ## Turning it off
@@ -173,7 +174,8 @@ the new one. Tips:
   stick.
 - If `models/Qwen3.5-0.8B-Q4_K_M.gguf` is present, llama-server also gets
   `--model-draft` — speculative decoding. The small model guesses tokens, the
-  main model validates them in batches: same output quality, ~1.3–1.5x speed.
+  main model validates them in batches: same output quality, with the largest
+  speedups on discrete GPUs.
 
 ---
 
@@ -207,9 +209,9 @@ actual zip sizes from the pinned releases (llama.cpp b10284, whisper.cpp v1.9.2)
 | Linux + Vulkan GPU (AMD etc.) | `ubuntu-vulkan-x64` / `ubuntu-vulkan-arm64` | 30.9 / 25.3 MB |
 | Voice (Windows/Linux only) | whisper `x64` / `ubuntu-x64` / `ubuntu-arm64` | 7.8 / 9.1 / 4.4 MB |
 
-Notes: Linux intentionally fetches the CPU build even when `nvidia-smi` is
-present — CUDA binaries bundle runtime libs that break USB portability (see
-`start.sh`). Linux AMD uses the Vulkan build, not the ROCm one. macOS has no
+Notes: Linux uses the Vulkan build for any GPU (NVIDIA, AMD, Intel) and the
+CPU build when there's none — CUDA/ROCm binaries bundle runtime libs that
+break USB portability everywhere outside Windows. macOS has no
 voice support because whisper.cpp ships no macOS binary. The biggest first-run
 download is Windows+NVIDIA at ~612 MB; everything else is under 310 MB.
 
@@ -272,13 +274,14 @@ and run it again.
   `--reasoning off` so Qwen3.5 answers directly. If you re-enable reasoning,
   reasoning tokens stream via `delta.reasoning_content` (dimmed in the UI)
   and the final answer in `delta.content`.
-- **Download failed**: launcher uses `curl` (bundled on Windows 10+, present
-  on macOS/Linux). Just re-run — downloads resume from the `.part` file.
+- **Download failed**: downloads use a tiny Node HTTPS client (no curl
+  needed). Just re-run — an interrupted download restarts from byte 0 (no
+  resume, so a `.part` file is never left behind).
 - **Slower than expected on Windows**: that's the no-mmap trade-off; loading
   the model fully into RAM instead of memory-mapping the file means no USB
   page-fault stalls, at the cost of more RAM used.
 - **Windows AMD Radeon**: discrete cards (RX / PRO / VII) use the HIP build;
   AMD iGPUs (Vega 3, etc.) have no HIP support on Windows, so the launcher
-  routes them to the CPU build automatically.
+  routes them to the Vulkan build automatically.
 - **Voice button missing**: the voice download failed on first run — just
   re-run the launcher; it retries anything that's missing.
