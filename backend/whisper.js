@@ -47,7 +47,7 @@ class WhisperServer {
     this.bin = findWhisperServer();
     if (!this.bin) throw new Error("whisper-server binary not found under bin/. Run the launcher.");
     this.model = findWhisperModel();
-    if (!this.model) throw new Error("No whisper STT model in models/. Run the launcher (or: node backend/download_stt_model.js).");
+    if (!this.model) throw new Error("No whisper STT model in models/. Run the launcher (windows.bat / start.sh) to download it.");
 
     fs.mkdirSync(LOGS_DIR, { recursive: true });
     const logPath = path.join(LOGS_DIR, "whisper-server.log");

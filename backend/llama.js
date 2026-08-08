@@ -64,7 +64,7 @@ function pickModel(cliArg) {
   const models = listModels();
   if (models.length === 0) {
     throw new Error(
-      "No model found in models/. Run the launcher (or: node backend/download_model.js) first."
+      "No model found in models/. Run the launcher (windows.bat / start.sh) to download it."
     );
   }
   const def = require("./config").DEFAULT_MODEL.name;
