@@ -131,7 +131,8 @@ is remembered for the session. If the machine is offline, search fails
 silently and the model answers from memory either way.
 
 Search results are fetched via keyless Firecrawl (no API keys, no signup).
-Recent queries are cached so repeats answer instantly.
+Recent queries are cached in memory only (5 minutes, ~200 entries) — never
+written to disk, never stored, gone when the app closes.
 
 ### Installing more models
 Drop any `.gguf` file into `models/`, refresh the page, and pick it from the
