@@ -48,9 +48,9 @@ that goes *out*, never in about you.
 
    - **Windows:** double-click the file named `windows.bat`.
    - **Mac:** open the **Terminal** app (Spotlight → type "Terminal"), type
-     `sh ` (a space at the end), then drag the file named `mac.sh` from the
+     `sh ` (a space at the end), then drag the file named `start.sh` from the
      USB onto the Terminal window, then press Enter.
-   - **Linux:** open a terminal and run `sh linux.sh` (or drag the `linux.sh`
+   - **Linux:** open a terminal and run `bash start.sh` (or drag the `start.sh`
      file onto it like the Mac step).
 
    A window opens and starts downloading the AI parts. It needs internet and
@@ -91,7 +91,7 @@ uploaded, no account is needed, no telemetry is sent.
 ## First run (needs internet once, ~5–15 min)
 
 1. Put the folder on a USB drive (see [Shipping on a USB](#shipping-on-a-usb)).
-2. Double-click `windows.bat` (or run `sh mac.sh` / `sh linux.sh`).
+2. Double-click `windows.bat` (Windows) or run `sh start.sh` (macOS/Linux).
 3. The launcher downloads into the folder, *only what this machine lacks*:
    - a portable Node.js runtime into `runtime/` (skipped if `node` is on PATH),
    - the matching prebuilt `llama-server` for your OS/GPU into `bin/`,
@@ -102,7 +102,7 @@ uploaded, no account is needed, no telemetry is sent.
 4. Your browser opens at `http://127.0.0.1:3000`.
 5. Click **Start engine** (top right) — first load takes ~30 s — then chat.
 
-All downloads cache in the folder with `.part` resume. Every later run is
+Downloads cache in the folder. Every later run is
 fully offline, no launcher step beyond double-click.
 
 ---
@@ -123,17 +123,14 @@ whisper model from first run; if that download failed, the button stays hidden.
 macOS voice is not supported (whisper.cpp publishes no macOS prebuilt binary).
 
 ### Web search (grounded answers)
-Web search is **on by default** — every message is checked against the web,
-so answers are grounded in real sources instead of the model guessing from
-training data. Click 🌐 to switch it off (per message); the toggle is
-remembered for the session. If the machine is offline, search fails silently
-and the model answers from memory either way.
+Web search is **off by default** — toggle it on with 🌐 for
+grounded answers: every message is then checked against the web, so answers
+cite real sources instead of the model guessing from training data. The toggle
+is remembered for the session. If the machine is offline, search fails
+silently and the model answers from memory either way.
 
-Search results are fetched from keyless providers with fallbacks — Google
-News RSS (current headlines, ~1s) and DuckDuckGo Lite race in parallel, with
-keyless Firecrawl as a last resort for anything they miss. No API keys,
-no signup anywhere in the flow; recent queries are cached so repeats answer
-instantly.
+Search results are fetched via keyless Firecrawl (no API keys, no signup).
+Recent queries are cached so repeats answer instantly.
 
 ### Installing more models
 Drop any `.gguf` file into `models/`, refresh the page, and pick it from the
@@ -212,7 +209,7 @@ actual zip sizes from the pinned releases (llama.cpp b10284, whisper.cpp v1.9.2)
 
 Notes: Linux intentionally fetches the CPU build even when `nvidia-smi` is
 present — CUDA binaries bundle runtime libs that break USB portability (see
-`linux.sh`). Linux AMD uses the Vulkan build, not the ROCm one. macOS has no
+`start.sh`). Linux AMD uses the Vulkan build, not the ROCm one. macOS has no
 voice support because whisper.cpp ships no macOS binary. The biggest first-run
 download is Windows+NVIDIA at ~612 MB; everything else is under 310 MB.
 
@@ -222,7 +219,7 @@ Copy these — the machine-independent pieces:
 
 ```
 backend/   frontend/   test/
-windows.bat  linux.sh  mac.sh
+windows.bat  start.sh
 models/                # the GGUF model + ggml-base.en.bin
 ```
 
@@ -254,12 +251,13 @@ projects like this:
 
 Only one machine has run this so far:
 
-- **Windows 11, x64, CPU-only** — `windows.bat` end to end: first-run
-  downloads, backend + llama-server + whisper-server startup, chat, voice
-  transcription, web search.
+- **Windows 11, x64, AMD Vega 3 iGPU (Vulkan)** — `windows.bat` end to end:
+  first-run downloads, auto GPU detection (Vulkan build), backend +
+  llama-server startup, chat with speculative decoding. Also verified
+  CPU fallback and the Web search toggle.
 
 Everything else is **code-reviewed against the release asset lists, not
-executed**: macOS and Linux launchers (`mac.sh`, `linux.sh`), ARM64, and all
+executed**: the macOS/Linux launcher (`start.sh`), ARM64, and all
 GPU builds (NVIDIA CUDA, AMD Radeon/HIP, Intel SYCL, Vulkan, Metal). First-run
 downloads are the risk point — if anything goes wrong, just close the window
 and run it again.
