@@ -111,8 +111,12 @@ function buildArgs(bin, model, opts = {}) {
   // Speculative decoding: if the draft GGUF is present, hand it to
   // llama-server. Same-family/tokenizer model -> ~1.3-1.5x faster tokens.
   // Cross-family drafts are auto-rejected by llama.cpp itself (WARN only).
+  // On this box 1.5 t/s decode is the RAM ceiling anyway, so ADD the
+  // draft: it nudges decode up at zero quality cost. POCKETBRAIN_NO_DRAFT=1
+  // forces it off.
   const draft = path.join(require("./config").MODELS_DIR, require("./config").DRAFT_MODEL.name);
-  if (fs.existsSync(draft)) a.push("--model-draft", draft);
+  const draftOn = fs.existsSync(draft) && process.env.POCKETBRAIN_NO_DRAFT !== "1";
+  if (draftOn) a.push("--model-draft", draft);
   return a;
 }
 

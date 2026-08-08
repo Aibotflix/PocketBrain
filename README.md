@@ -16,7 +16,7 @@ that goes *out*, never in about you.
 | ⚡ **Fast** | ~1.3–1.5x faster with speculative decoding (Qwen3.5-4B + 0.8B draft) |
 | 📦 **Pocket-sized** | ~3.4 GB total, fits on a consumer 4 GB USB stick — carry it in your pocket, run it anywhere |
 | 📋 **Copy in one tap** | Every AI answer has a copy button — grab it, paste it, done |
-| 🌐 **Grounded** | Optional web search (keyless Firecrawl, no API key) — answers from today, not training data |
+| 🌐 **Grounded** | Optional web search (keyless — no API key) — answers from today, not training data |
 
 | | |
 |---|---|
@@ -78,8 +78,8 @@ uploaded, no account is needed, no telemetry is sent.
 - **Voice input** — speak instead of typing; a local whisper.cpp server turns
   your voice into text. Audio never leaves the machine.
 - **Web search (opt-in, per message)** — toggle 🌐 and answers get grounded in
-  real web results (Firecrawl Keyless, no API key) instead of the model
-  guessing. The only feature that needs internet.
+  real web results instead of the model guessing. The only feature that needs
+  internet.
 - **Copy any reply** — each AI answer has a Copy button; one click puts it on
   your clipboard as plain text.
 - **Works on any OS/arch without choosing anything** — the launcher detects
@@ -128,6 +128,12 @@ so answers are grounded in real sources instead of the model guessing from
 training data. Click 🌐 to switch it off (per message); the toggle is
 remembered for the session. If the machine is offline, search fails silently
 and the model answers from memory either way.
+
+Search results are fetched from keyless providers with fallbacks — Google
+News RSS (current headlines, ~1s) and DuckDuckGo Lite race in parallel, with
+keyless Firecrawl as a last resort for anything they miss. No API keys,
+no signup anywhere in the flow; recent queries are cached so repeats answer
+instantly.
 
 ### Installing more models
 Drop any `.gguf` file into `models/`, refresh the page, and pick it from the

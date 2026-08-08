@@ -20,11 +20,15 @@ function download(url, dest, opts = {}) {
   return new Promise((resolve, reject) => {
     ensureDir(path.dirname(dest));
     const tmp = dest + ".part";
-    const resume = fs.existsSync(tmp);
-    const start = resume ? fs.statSync(tmp).size : 0;
+    // A stale .part means a previous download died halfway. Never resume a
+    // half-trusted file, never leave .part behind: restart from byte 0. If
+    // this new attempt fails, the cleanup below deletes it again - the .part
+    // exists only for the lifetime of an in-flight download.
+    const cleanup = (p) => { try { fs.unlinkSync(p); } catch (_) {} };
+    cleanup(tmp);
+    const start = 0;
 
     const headers = Object.assign({ "User-Agent": "pocketbrain/0.1" }, opts.headers || {});
-    if (start > 0) headers["Range"] = `bytes=${start}-`;
 
     const lib = url.startsWith("https") ? https : http;
     const req = lib.get(url, { headers, timeout: 30_000 }, (res) => {
@@ -35,11 +39,9 @@ function download(url, dest, opts = {}) {
       }
       if (res.statusCode !== 200 && res.statusCode !== 206) {
         res.resume();
+        cleanup(tmp);
         return reject(new Error(`HTTP ${res.statusCode} for ${url}`));
       }
-      // We asked for bytes=start- but got a plain 200: the server ignored
-      // Range. Start the file over instead of appending to a stale tail.
-      if (start > 0 && res.statusCode === 200) start = 0;
 
       const totalHeader = parseInt(res.headers["content-length"] || "0", 10);
       const total = totalHeader ? totalHeader + start : 0;
@@ -61,8 +63,9 @@ function download(url, dest, opts = {}) {
       res.pipe(out);
       out.on("finish", () => {
         out.close((err) => {
-          if (err) return reject(err);
+          if (err) { cleanup(tmp); return reject(err); }
           if (total && Math.abs(received - total) > 1024 * 16) {
+            cleanup(tmp);
             return reject(new Error(`Size mismatch: got ${received}, expected ${total}`));
           }
           fs.renameSync(tmp, dest);
@@ -72,10 +75,10 @@ function download(url, dest, opts = {}) {
           resolve(dest);
         });
       });
-      out.on("error", reject);
+      out.on("error", (e) => { cleanup(tmp); reject(e); });
     });
-    req.on("error", reject);
-    req.on("timeout", () => req.destroy(new Error("download timeout")));
+    req.on("error", (e) => { cleanup(tmp); reject(e); });
+    req.on("timeout", () => { cleanup(tmp); req.destroy(new Error("download timeout")); });
   });
 }
 
