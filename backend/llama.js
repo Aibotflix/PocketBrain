@@ -80,7 +80,7 @@ function get(v) { return v !== undefined ? String(v) : null; }
 // Only used when the caller doesn't say.
 function defaultNgl(bin) {
   const d = path.basename(path.dirname(bin)).toLowerCase();
-  if (/macos/.test(d)) return 99; // Metal (Apple Silicon) or Intel iGPU
+  if (/macos-arm64/.test(d)) return 99; // Metal exists only on Apple Silicon
   if (/cuda|hip|rocm|vulkan|opencl|sycl/.test(d)) return 99;
   return 0;
 }
@@ -121,12 +121,18 @@ function buildArgs(bin, model, opts = {}) {
 }
 
 class LlamaServer {
-  constructor() { this.proc = null; this.bin = null; this.model = null; this.ready = false; }
+  constructor() { this.proc = null; this.bin = null; this.model = null; this.ready = false; this.starting = null; }
 
-  // Try each available llama-server binary in preference order. Prefer the
-  // one with mostly GPU-free CPU argv first? No: caller supplies a preferred
-  // order via opts.candidates (already GPU-first). We fall through on failure.
-  async start({ model, ngl, candidates, onTry } = {}) {
+  // Serialize concurrent starts: only the first call spawns; the rest await
+  // the same in-flight attempt.
+  async start(opts = {}) {
+    if (this.isRunning()) return;
+    if (this.starting) return this.starting;
+    this.starting = this._start(opts);
+    try { return await this.starting; } finally { this.starting = null; }
+  }
+
+  async _start({ model, ngl, candidates, onTry } = {}) {
     if (this.isRunning()) return;
     this.model = pickModel(model);
     this.ngl = ngl;

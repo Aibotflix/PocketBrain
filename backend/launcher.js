@@ -124,7 +124,8 @@ function extract(archive, dir) {
   const r = spawnSync("tar", ["-xmf", archive, "-C", dir], { stdio: "inherit" });
   if (r.status === 0) return;
   const r2 = spawnSync("powershell", ["-NoProfile", "-ExecutionPolicy", "Bypass",
-    "-Command", `Expand-Archive -LiteralPath '${archive}' -DestinationPath '${dir}' -Force`],
+    "-Command", "param($a,$b) Expand-Archive -LiteralPath $a -DestinationPath $b -Force",
+    archive, dir],
     { stdio: "inherit", windowsHide: true });
   if (r2.status !== 0) throw new Error(`extract failed: ${archive}`);
 }

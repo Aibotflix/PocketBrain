@@ -40,9 +40,16 @@ function findWhisperModel() {
 }
 
 class WhisperServer {
-  constructor() { this.proc = null; this.bin = null; this.model = null; }
+  constructor() { this.proc = null; this.bin = null; this.model = null; this.starting = null; }
 
   async start() {
+    if (this.isRunning()) return;
+    if (this.starting) return this.starting;
+    this.starting = this._start();
+    try { return await this.starting; } finally { this.starting = null; }
+  }
+
+  async _start() {
     if (this.isRunning()) return;
     this.bin = findWhisperServer();
     if (!this.bin) throw new Error("whisper-server binary not found under bin/. Run the launcher.");

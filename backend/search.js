@@ -19,19 +19,15 @@ const CACHE_MAX = 200;
 
 const cache = new Map();
 
-function withTimeout(promise, ms) {
-  return Promise.race([
-    promise,
-    new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), ms)),
-  ]);
-}
-
 // ponytail: Map preserves insertion order; delete + re-set = LRU in ~3 lines.
 // Cap 200 entries. Upgrade to a real LRU lib only if memory shows up.
 function cacheGet(key) {
   if (!cache.has(key)) return undefined;
   const v = cache.get(key);
-  if (v.ts + CACHE_TTL < Date.now()) return undefined;
+  if (v.ts + CACHE_TTL < Date.now()) {
+    cache.delete(key);
+    return undefined;
+  }
   cache.delete(key); cache.set(key, v); // move to MRU
   return v.value;
 }
@@ -44,13 +40,23 @@ async function searchFirecrawl(q, limit) {
   const apiKey = process.env.FIRECRAWL_API_KEY || "";
   const headers = { "Content-Type": "application/json" };
   if (apiKey) headers.Authorization = `Bearer ${apiKey}`;
-  // web + news sources: web covers any question, news returns dated
-  // headline+snippet for current-events queries instead of generic pages.
-  const res = await withTimeout(fetch(FIRECRAWL, {
-    method: "POST",
-    headers,
-    body: JSON.stringify({ query: q, limit: Math.ceil(limit / 2), sources: [{ type: "web" }, { type: "news" }] }),
-  }), TIMEOUT_MS);
+  // AbortController cancels the real fetch on timeout (Promise.race alone
+  // would leave it running in the background).
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  let res;
+  try {
+    res = await fetch(FIRECRAWL, {
+      method: "POST",
+      headers,
+      signal: controller.signal,
+      body: JSON.stringify({ query: q, limit: Math.ceil(limit / 2), sources: [{ type: "web" }, { type: "news" }] }),
+    });
+  } catch (e) {
+    throw new Error(e.name === "AbortError" ? "timeout" : e.message);
+  } finally {
+    clearTimeout(timer);
+  }
   if (!res.ok) throw new Error(`Firecrawl HTTP ${res.status}`);
   const j = await res.json();
   const data = j.data || {};
